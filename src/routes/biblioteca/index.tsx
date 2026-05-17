@@ -83,6 +83,23 @@ function Biblioteca() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle className="text-base">Tipos de recurso</CardTitle></CardHeader>
+          <CardContent className="flex flex-wrap gap-1.5">
+            {TIPOS_RECURSO.map((t) => <Badge key={t} variant="secondary" className="font-normal">{t}</Badge>)}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2"><Filter className="h-4 w-4 text-primary" /><CardTitle className="text-base">Filtros disponíveis</CardTitle></div>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-1.5">
+            {FILTROS_BIBLIOTECA.map((f) => <Badge key={f} variant="outline" className="font-normal">{f}</Badge>)}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
