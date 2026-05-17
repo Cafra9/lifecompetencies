@@ -3,9 +3,9 @@ import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { FRAMEWORK_SKILLS } from "@/lib/iSP-content";
+import { FRAMEWORK_SKILLS, TIPOS_RECURSO, FILTROS_BIBLIOTECA } from "@/lib/iSP-content";
 import { competencyColor } from "@/lib/competencies";
-import { BookOpen, FileText, LayoutGrid } from "lucide-react";
+import { BookOpen, FileText, LayoutGrid, Filter } from "lucide-react";
 
 export const Route = createFileRoute("/biblioteca/")({
   component: () => (
@@ -83,6 +83,23 @@ function Biblioteca() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle className="text-base">Tipos de recurso</CardTitle></CardHeader>
+          <CardContent className="flex flex-wrap gap-1.5">
+            {TIPOS_RECURSO.map((t) => <Badge key={t} variant="secondary" className="font-normal">{t}</Badge>)}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2"><Filter className="h-4 w-4 text-primary" /><CardTitle className="text-base">Filtros disponíveis</CardTitle></div>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-1.5">
+            {FILTROS_BIBLIOTECA.map((f) => <Badge key={f} variant="outline" className="font-normal">{f}</Badge>)}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

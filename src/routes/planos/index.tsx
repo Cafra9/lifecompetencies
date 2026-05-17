@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PLANO_EXEMPLO } from "@/lib/iSP-content";
-import { ClipboardList, Users } from "lucide-react";
+import { PLANO_EXEMPLO, MODELO_PLANO } from "@/lib/iSP-content";
+import { ClipboardList, Users, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/planos/")({
   component: () => (
@@ -61,6 +61,18 @@ function Planos() {
               ))}
             </div>
           </section>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /><CardTitle className="text-base">Modelo de plano de aula</CardTitle></div>
+          <CardDescription>Campos sugeridos para padronizar planos compartilhados na plataforma.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ol className="grid gap-2 sm:grid-cols-2 list-decimal pl-5 text-sm">
+            {MODELO_PLANO.map((c) => <li key={c} className="text-muted-foreground"><span className="text-foreground">{c}</span></li>)}
+          </ol>
         </CardContent>
       </Card>
     </div>

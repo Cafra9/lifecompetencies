@@ -3,8 +3,8 @@ import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { competencyColor } from "@/lib/competencies";
-import { BIG5_STATEMENTS, ESTRATEGIAS_PEDAGOGICAS, LEARNING_FIRST_DESIGN } from "@/lib/iSP-content";
-import { Lightbulb, Workflow } from "lucide-react";
+import { BIG5_STATEMENTS, ESTRATEGIAS_PEDAGOGICAS, LEARNING_FIRST_DESIGN, ESTRUTURA_TRILHA } from "@/lib/iSP-content";
+import { Lightbulb, Workflow, ListChecks } from "lucide-react";
 
 export const Route = createFileRoute("/formacao/")({
   component: () => (
@@ -82,6 +82,22 @@ function Formacao() {
             </Card>
           ))}
         </div>
+      </section>
+
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <ListChecks className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">Estrutura de cada trilha formativa</h2>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <ol className="grid gap-2 sm:grid-cols-2 list-decimal pl-5 text-sm">
+              {ESTRUTURA_TRILHA.map((m) => (
+                <li key={m} className="text-muted-foreground"><span className="text-foreground">{m}</span></li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
       </section>
     </div>
   );

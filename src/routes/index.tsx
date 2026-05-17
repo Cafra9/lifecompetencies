@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { OBJETIVOS_SEMESTRE, BIG5_STATEMENTS } from "@/lib/iSP-content";
+import { OBJETIVOS_SEMESTRE, BIG5_STATEMENTS, HOME_WELCOME, DESAFIOS_MENSAIS } from "@/lib/iSP-content";
 import { competencyColor } from "@/lib/competencies";
-import { Target, BookOpen, ClipboardCheck, GraduationCap } from "lucide-react";
+import { Target, BookOpen, ClipboardCheck, GraduationCap, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -27,8 +27,8 @@ function Dashboard() {
     <div className="space-y-8">
       <div>
         <p className="text-sm font-medium text-primary uppercase tracking-wide">Aubrick · ISP Life Competencies</p>
-        <h1 className="text-3xl font-bold tracking-tight mt-1">Mentes curiosas e confiantes</h1>
-        <p className="text-muted-foreground mt-1">Plataforma de formação docente, planejamento e avaliação por competências.</p>
+        <h1 className="text-3xl font-bold tracking-tight mt-1">{HOME_WELCOME.titulo}</h1>
+        <p className="text-muted-foreground mt-2 max-w-3xl">{HOME_WELCOME.texto}</p>
       </div>
 
       <section>
@@ -77,6 +77,23 @@ function Dashboard() {
         <QuickCard icon={BookOpen} title="Biblioteca" desc="Framework, rubricas e recursos" to="/biblioteca" />
         <QuickCard icon={ClipboardCheck} title="Planos de Aula" desc="Repositório colaborativo" to="/planos" />
       </section>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2"><Trophy className="h-5 w-5 text-primary" /><CardTitle className="text-base">Desafios pedagógicos do semestre</CardTitle></div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {DESAFIOS_MENSAIS.map((d) => (
+              <div key={d.mes} className="rounded-lg border p-3">
+                <div className="text-xs text-primary font-medium uppercase">{d.mes}</div>
+                <div className="font-medium mt-1">{d.titulo}</div>
+                <div className="text-xs text-muted-foreground mt-1">{d.desc}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
