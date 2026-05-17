@@ -77,6 +77,23 @@ function Dashboard() {
         <QuickCard icon={BookOpen} title="Biblioteca" desc="Framework, rubricas e recursos" to="/biblioteca" />
         <QuickCard icon={ClipboardCheck} title="Planos de Aula" desc="Repositório colaborativo" to="/planos" />
       </section>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2"><Trophy className="h-5 w-5 text-primary" /><CardTitle className="text-base">Desafios pedagógicos do semestre</CardTitle></div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {DESAFIOS_MENSAIS.map((d) => (
+              <div key={d.mes} className="rounded-lg border p-3">
+                <div className="text-xs text-primary font-medium uppercase">{d.mes}</div>
+                <div className="font-medium mt-1">{d.titulo}</div>
+                <div className="text-xs text-muted-foreground mt-1">{d.desc}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
