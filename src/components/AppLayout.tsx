@@ -1,16 +1,9 @@
-import { Navigate } from "@tanstack/react-router";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { useAuth } from "@/hooks/useAuth";
 import type { ReactNode } from "react";
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Carregando…</div>;
-  }
-  if (!user) return <Navigate to="/auth" />;
-
+  // Auth temporariamente desativada para facilitar testes.
   return (
     <SidebarProvider>
       <AppSidebar />
