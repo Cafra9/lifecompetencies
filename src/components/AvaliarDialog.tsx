@@ -264,27 +264,27 @@ function downloadPDF({
   const marginTop = 56;
   const marginBottom = 60;
 
-  // Cabeçalho
+  // Cabeçalho — logo Aubrick | iSP centralizado preservando proporção
+  const logoH = 42;
   try {
-    doc.addImage(ispLogo, "PNG", marginX, marginTop - 8, 48, 48);
+    const props = (doc as any).getImageProperties(ispLogo);
+    const ratio = props.width / props.height;
+    const logoW = logoH * ratio;
+    const logoX = (pageW - logoW) / 2;
+    doc.addImage(ispLogo, "PNG", logoX, marginTop - 10, logoW, logoH);
   } catch {
     // ignore se falhar
   }
 
-  doc.setFont("helvetica", "bold"); // Arial-equivalente no jsPDF
-  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
   doc.setTextColor(...ISP_NAVY);
-  doc.text("Relatório Pedagógico", marginX + 60, marginTop + 8);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(90, 90, 90);
-  doc.text("iSP Life Competencies", marginX + 60, marginTop + 24);
+  doc.text("Relatório Pedagógico", pageW / 2, marginTop + 48, { align: "center" });
 
   // Linha
   doc.setDrawColor(...ISP_NAVY);
   doc.setLineWidth(1);
-  doc.line(marginX, marginTop + 48, pageW - marginX, marginTop + 48);
+  doc.line(marginX, marginTop + 60, pageW - marginX, marginTop + 60);
 
   // Bloco de identificação
   doc.setFont("helvetica", "normal");
