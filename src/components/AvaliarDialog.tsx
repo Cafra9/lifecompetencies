@@ -248,6 +248,7 @@ export function AvaliarDialog({
                 placeholder="Registre observações gerais sobre o desenvolvimento, comportamento, evidências em sala e recomendações para este aluno."
                 className="min-h-[140px] text-sm"
                 maxLength={4000}
+                readOnly={fechado}
               />
               <div className="text-[11px] text-muted-foreground mt-1 text-right">
                 {localObs.length}/4000
