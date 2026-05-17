@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PLANO_EXEMPLO } from "@/lib/iSP-content";
-import { ClipboardList, Users } from "lucide-react";
+import { PLANO_EXEMPLO, MODELO_PLANO } from "@/lib/iSP-content";
+import { ClipboardList, Users, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/planos/")({
   component: () => (
