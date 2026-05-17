@@ -70,24 +70,39 @@ export function AvaliarDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data, observacao, save } = useStudentAssessment(alunoId);
+  const { data, observacao, fechado, save } = useStudentAssessment(alunoId);
   const [local, setLocal] = useState<AssessmentMap>(data);
   const [localObs, setLocalObs] = useState<string>(observacao);
   const [openItems, setOpenItems] = useState<Record<string, string[]>>({});
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
     if (open) {
       setLocal(data);
       setLocalObs(observacao);
       setOpenItems({});
+      // pequeno delay para evitar que o efeito de auto-save dispare
+      // com o estado anterior na primeira renderização após abrir.
+      hydratedRef.current = false;
+      requestAnimationFrame(() => {
+        hydratedRef.current = true;
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Auto-save contínuo: nada se perde se o professor fechar a aba
+  // ou sair do site no meio do preenchimento.
+  useEffect(() => {
+    if (!open || fechado || !hydratedRef.current) return;
+    save(local, localObs);
+  }, [local, localObs, open, fechado, save]);
 
   const total = RUBRICA_INFANTIL.reduce((acc, c) => acc + c.habilidades.length, 0);
   const preenchidos = Object.keys(local).length;
 
   function setNivel(comp: string, hab: string, nivel: Nivel, slug: string) {
+    if (fechado) return;
     setLocal((prev) => {
       const k = key(comp, hab);
       if (prev[k] === nivel) {
@@ -96,7 +111,6 @@ export function AvaliarDialog({
       }
       return { ...prev, [k]: nivel };
     });
-    // recolhe a habilidade ao escolher um nível
     setOpenItems((prev) => ({
       ...prev,
       [slug]: (prev[slug] ?? []).filter((v) => v !== key(comp, hab)),
