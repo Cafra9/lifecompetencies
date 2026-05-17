@@ -1,85 +1,57 @@
-import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { toast } from "sonner";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  LayoutDashboard,
+  GraduationCap,
+  BookOpen,
+  ClipboardList,
+  Users,
+  ClipboardCheck,
+  BarChart3,
+  UserCircle,
+  Shield,
+} from "lucide-react";
 
-export const Route = createFileRoute("/auth")({ component: AuthPage });
+export const Route = createFileRoute("/auth")({ component: MenuPage });
 
-function AuthPage() {
-  const { user, loading } = useAuth();
-  const nav = useNavigate();
-  const [busy, setBusy] = useState(false);
+const pages = [
+  { to: "/", title: "Dashboard", desc: "Visão geral", icon: LayoutDashboard },
+  { to: "/formacao", title: "Formação", desc: "Trilhas e cursos", icon: GraduationCap },
+  { to: "/biblioteca", title: "Biblioteca", desc: "Recursos pedagógicos", icon: BookOpen },
+  { to: "/planos", title: "Planos de Aula", desc: "Repositório colaborativo", icon: ClipboardList },
+  { to: "/turmas", title: "Minhas Turmas", desc: "Turmas e alunos", icon: Users },
+  { to: "/avaliacoes", title: "Avaliações", desc: "Avaliar habilidades", icon: ClipboardCheck },
+  { to: "/relatorios", title: "Relatórios", desc: "Gráficos e PDF", icon: BarChart3 },
+  { to: "/perfil", title: "Perfil", desc: "Meus dados", icon: UserCircle },
+  { to: "/admin", title: "Administração", desc: "Gestão da plataforma", icon: Shield },
+] as const;
 
-  if (!loading && user) return <Navigate to="/" />;
-
-  async function signIn(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setBusy(true);
-    const f = new FormData(e.currentTarget);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: String(f.get("email")),
-      password: String(f.get("password")),
-    });
-    setBusy(false);
-    if (error) toast.error(error.message);
-    else nav({ to: "/" });
-  }
-
-  async function signUp(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setBusy(true);
-    const f = new FormData(e.currentTarget);
-    const { error } = await supabase.auth.signUp({
-      email: String(f.get("email")),
-      password: String(f.get("password")),
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: { nome: String(f.get("nome")) },
-      },
-    });
-    setBusy(false);
-    if (error) toast.error(error.message);
-    else toast.success("Conta criada! Você já pode entrar.");
-  }
-
+function MenuPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/30 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-3 h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">CV</div>
-          <CardTitle className="text-2xl">Competências para a Vida</CardTitle>
-          <CardDescription>Formação e Avaliação Docente</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="entrar">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="entrar">Entrar</TabsTrigger>
-              <TabsTrigger value="criar">Criar conta</TabsTrigger>
-            </TabsList>
-            <TabsContent value="entrar">
-              <form onSubmit={signIn} className="space-y-3 mt-4">
-                <div><Label htmlFor="e-email">E-mail</Label><Input id="e-email" name="email" type="email" required autoComplete="email" /></div>
-                <div><Label htmlFor="e-pass">Senha</Label><Input id="e-pass" name="password" type="password" required autoComplete="current-password" /></div>
-                <Button type="submit" className="w-full" disabled={busy}>{busy ? "Entrando..." : "Entrar"}</Button>
-              </form>
-            </TabsContent>
-            <TabsContent value="criar">
-              <form onSubmit={signUp} className="space-y-3 mt-4">
-                <div><Label htmlFor="s-nome">Nome completo</Label><Input id="s-nome" name="nome" required /></div>
-                <div><Label htmlFor="s-email">E-mail</Label><Input id="s-email" name="email" type="email" required autoComplete="email" /></div>
-                <div><Label htmlFor="s-pass">Senha</Label><Input id="s-pass" name="password" type="password" required minLength={6} autoComplete="new-password" /></div>
-                <Button type="submit" className="w-full" disabled={busy}>{busy ? "Criando..." : "Criar conta"}</Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen bg-background px-4 py-12">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold tracking-tight">Competências para a Vida</h1>
+          <p className="text-muted-foreground mt-2">
+            Menu de navegação (modo de testes — autenticação desativada)
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {pages.map((p) => (
+            <Link key={p.to} to={p.to} className="group">
+              <Card className="h-full transition hover:shadow-md hover:border-primary/40">
+                <CardHeader>
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-2">
+                    <p.icon className="h-5 w-5" />
+                  </div>
+                  <CardTitle className="text-base">{p.title}</CardTitle>
+                  <CardDescription>{p.desc}</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
