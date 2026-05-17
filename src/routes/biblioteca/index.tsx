@@ -3,9 +3,9 @@ import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { FRAMEWORK_SKILLS } from "@/lib/iSP-content";
+import { FRAMEWORK_SKILLS, TIPOS_RECURSO, FILTROS_BIBLIOTECA } from "@/lib/iSP-content";
 import { competencyColor } from "@/lib/competencies";
-import { BookOpen, FileText, LayoutGrid } from "lucide-react";
+import { BookOpen, FileText, LayoutGrid, Filter } from "lucide-react";
 
 export const Route = createFileRoute("/biblioteca/")({
   component: () => (
