@@ -10,6 +10,7 @@ const InputSchema = z.object({
         competencia: z.string().min(1).max(80),
         habilidade: z.string().min(1).max(120),
         nivel: z.enum(["iniciando", "desenvolvendo", "dominando"]),
+        observacao: z.string().max(2000).optional(),
       }),
     )
     .min(1)
@@ -28,7 +29,11 @@ export const gerarRelatorioAluno = createServerFn({ method: "POST" })
     }
 
     const linhas = data.avaliacoes
-      .map((a) => `- [${a.competencia} · ${a.habilidade}] nível: ${a.nivel}`)
+      .map((a) => {
+        const base = `- [${a.competencia} · ${a.habilidade}] nível: ${a.nivel}`;
+        const obs = a.observacao?.trim();
+        return obs ? `${base}\n    observação do professor: ${obs}` : base;
+      })
       .join("\n");
 
     const prompt = `Você é um(a) coordenador(a) pedagógico(a) do programa iSP Life Competencies.
@@ -39,7 +44,7 @@ ${linhas}
 
 Estruture o relatório com:
 1) Um parágrafo de abertura com visão geral.
-2) Um parágrafo por competência avaliada (Cognitivo, Global, Digital, Autoliderança, Interpessoal — apenas as que têm avaliações), destacando pontos fortes e áreas de crescimento.
+2) Um parágrafo por competência avaliada (Cognitivo, Global, Digital, Autoliderança, Interpessoal — apenas as que têm avaliações), destacando pontos fortes e áreas de crescimento e incorporando, quando houver, as observações do(a) professor(a).
 3) Um parágrafo final com recomendações práticas e próximos passos para o(a) professor(a).
 
 Use tom acolhedor, evite jargão técnico desnecessário, não use bullets nem markdown — apenas parágrafos. Não invente avaliações que não foram informadas.`;
