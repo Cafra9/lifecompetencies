@@ -28,8 +28,14 @@ function writeAll(data: Record<string, StudentAssessment>) {
 }
 
 export function useStudentAssessment(alunoId: string) {
-  const [data, setData] = useState<AssessmentMap>({});
-  const [observacao, setObservacao] = useState<string>("");
+  // Inicialização síncrona a partir do localStorage para evitar perda
+  // do estado já salvo no primeiro render (ex.: ao reabrir o diálogo).
+  const [data, setData] = useState<AssessmentMap>(
+    () => readAll()[alunoId]?.avaliacoes ?? {},
+  );
+  const [observacao, setObservacao] = useState<string>(
+    () => readAll()[alunoId]?.observacao ?? "",
+  );
 
   useEffect(() => {
     const load = () => {
