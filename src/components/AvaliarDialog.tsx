@@ -531,17 +531,38 @@ export function RelatorioDialog({
           </div>
         )}
 
-        <DialogFooter className="flex-row justify-between sm:justify-between">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRegerarSelecao}
-            disabled={loading || !texto}
-            className="gap-2"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {trechoLen > 0 ? "Regerar seleção" : "Regerar"}
-          </Button>
+        <DialogFooter className="flex-row justify-between sm:justify-between gap-2">
+          <div className="flex gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleGerarCompleto}
+              disabled={loading}
+              className="gap-2"
+            >
+              {loading && !trechoLen ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Gerar relatório
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRegerarSelecao}
+              disabled={loading || !texto || trechoLen === 0}
+              className="gap-2"
+              title={trechoLen === 0 ? "Selecione um trecho do texto para regerar" : undefined}
+            >
+              {loading && trechoLen > 0 ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCcw className="h-4 w-4" />
+              )}
+              Regerar seleção
+            </Button>
+          </div>
           <Button size="sm" onClick={handleDownload} disabled={!texto} className="gap-2">
             <Download className="h-4 w-4" /> Baixar PDF
           </Button>
