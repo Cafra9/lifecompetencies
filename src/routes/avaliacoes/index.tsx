@@ -5,9 +5,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Plus, FileText, ChevronDown, BookOpen } from "lucide-react";
+import {
+  Search,
+  Filter,
+  Plus,
+  FileText,
+  ChevronDown,
+  BookOpen,
+  Flame,
+  Lock,
+  Unlock,
+} from "lucide-react";
 import { AvaliarDialog, RelatorioDialog } from "@/components/AvaliarDialog";
-import { useAllAssessments, countByLevel } from "@/lib/assessments-store";
+import { HeatmapDialog } from "@/components/HeatmapDialog";
+import { useAllAssessments, countByLevel, useStudentAssessment } from "@/lib/assessments-store";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/avaliacoes/")({
   component: AvaliacoesPage,
