@@ -139,7 +139,12 @@ export function AvaliarDialog({
             {RUBRICA_INFANTIL.map((c) => (
               <div key={c.slug}>
                 <div className="text-sm font-semibold text-foreground mb-2">{c.competencia}</div>
-                <Accordion type="multiple" className="space-y-2">
+                <Accordion
+                  type="multiple"
+                  className="space-y-2"
+                  value={openItems[c.slug] ?? []}
+                  onValueChange={(v) => setOpenItems((prev) => ({ ...prev, [c.slug]: v }))}
+                >
                   {c.habilidades.map((h) => {
                     const k = key(c.competencia, h.habilidade);
                     const cur = local[k];
@@ -174,7 +179,7 @@ export function AvaliarDialog({
                                   key={n}
                                   type="button"
                                   data-selected={selected}
-                                  onClick={() => setNivel(c.competencia, h.habilidade, n)}
+                                  onClick={() => setNivel(c.competencia, h.habilidade, n, c.slug)}
                                   className={`text-left rounded-md border p-3 transition-colors ${NIVEL_HEADER[n]} hover:brightness-95 ${NIVEL_BTN[n]} ${selected ? "ring-2 ring-offset-1 ring-foreground/20" : ""}`}
                                 >
                                   <div className="flex items-center justify-between mb-1.5">
