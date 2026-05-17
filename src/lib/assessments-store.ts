@@ -3,10 +3,12 @@ import type { Nivel } from "@/lib/rubrica-infantil";
 
 // Avaliação local (sem backend) — chave por aluno + competência + habilidade
 export type AssessmentMap = Record<string, Nivel>; // `${competencia}::${habilidade}` -> nivel
+export type NotesMap = Record<string, string>; // `${competencia}::${habilidade}` -> observação
 
 export interface StudentAssessment {
   alunoId: string;
   avaliacoes: AssessmentMap;
+  observacoes: NotesMap;
   atualizadoEm: string;
 }
 
