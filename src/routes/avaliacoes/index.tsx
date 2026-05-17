@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Plus, TrendingUp, ChevronDown } from "lucide-react";
+import { Search, Filter, Plus, TrendingUp, ChevronDown, BookOpen } from "lucide-react";
 
 export const Route = createFileRoute("/avaliacoes/")({
   component: AvaliacoesPage,
