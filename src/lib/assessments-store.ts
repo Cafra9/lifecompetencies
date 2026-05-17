@@ -3,12 +3,11 @@ import type { Nivel } from "@/lib/rubrica-infantil";
 
 // Avaliação local (sem backend) — chave por aluno + competência + habilidade
 export type AssessmentMap = Record<string, Nivel>; // `${competencia}::${habilidade}` -> nivel
-export type NotesMap = Record<string, string>; // `${competencia}::${habilidade}` -> observação
 
 export interface StudentAssessment {
   alunoId: string;
   avaliacoes: AssessmentMap;
-  observacoes: NotesMap;
+  observacao: string; // observação geral do professor sobre o aluno
   atualizadoEm: string;
 }
 
@@ -30,13 +29,13 @@ function writeAll(data: Record<string, StudentAssessment>) {
 
 export function useStudentAssessment(alunoId: string) {
   const [data, setData] = useState<AssessmentMap>({});
-  const [notes, setNotes] = useState<NotesMap>({});
+  const [observacao, setObservacao] = useState<string>("");
 
   useEffect(() => {
     const load = () => {
       const all = readAll();
       setData(all[alunoId]?.avaliacoes ?? {});
-      setNotes(all[alunoId]?.observacoes ?? {});
+      setObservacao(all[alunoId]?.observacao ?? "");
     };
     load();
     window.addEventListener("isp-assessments-updated", load);
@@ -44,12 +43,12 @@ export function useStudentAssessment(alunoId: string) {
   }, [alunoId]);
 
   const save = useCallback(
-    (avaliacoes: AssessmentMap, observacoes: NotesMap = {}) => {
+    (avaliacoes: AssessmentMap, observacao: string = "") => {
       const all = readAll();
       all[alunoId] = {
         alunoId,
         avaliacoes,
-        observacoes,
+        observacao,
         atualizadoEm: new Date().toISOString(),
       };
       writeAll(all);
@@ -57,7 +56,7 @@ export function useStudentAssessment(alunoId: string) {
     [alunoId],
   );
 
-  return { data, notes, save };
+  return { data, observacao, save };
 }
 
 export function useAllAssessments() {
