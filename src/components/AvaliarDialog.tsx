@@ -290,7 +290,7 @@ function downloadPDF({
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
   doc.setTextColor(20, 20, 20);
-  const idY = marginTop + 70;
+  const idY = marginTop + 82;
   doc.setFont("helvetica", "bold");
   doc.text("Aluno:", marginX, idY);
   doc.setFont("helvetica", "normal");
