@@ -127,15 +127,24 @@ export function AvaliarDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90dvh] max-h-[90dvh] flex flex-col overflow-hidden">
         <DialogHeader className="shrink-0">
-          <DialogTitle>Avaliar {alunoNome}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Avaliar {alunoNome}
+            {fechado && (
+              <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
+                Avaliação fechada
+              </Badge>
+            )}
+          </DialogTitle>
           <DialogDescription>
-            Rubrica Educação Infantil (4-7 anos) · Expanda cada habilidade para ver a rubrica completa.
+            {fechado
+              ? "Esta avaliação foi finalizada. Reabra no card do aluno para editar."
+              : "Rubrica Educação Infantil (4-7 anos) · Suas alterações são salvas automaticamente."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex shrink-0 items-center gap-2 text-sm">
           <Badge variant="secondary">{preenchidos}/{total} habilidades</Badge>
-          {(preenchidos > 0 || localObs.trim()) && (
+          {!fechado && (preenchidos > 0 || localObs.trim()) && (
             <Button
               variant="ghost"
               size="sm"
