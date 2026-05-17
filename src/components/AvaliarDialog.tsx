@@ -97,7 +97,7 @@ export function AvaliarDialog({
           )}
         </div>
 
-        <ScrollArea className="flex-1 pr-3 -mr-3">
+        <ScrollArea className="flex-1 min-h-0 pr-3 -mr-3">
           <div className="space-y-5">
             {RUBRICA_INFANTIL.map((c) => (
               <div key={c.slug}>
