@@ -74,14 +74,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Life Competences" },
+      { name: "description", content: "A web platform for educators to enhance teaching through competency-based training, resource sharing, and student assessment." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Life Competences" },
+      { property: "og:description", content: "A web platform for educators to enhance teaching through competency-based training, resource sharing, and student assessment." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Life Competences" },
+      { name: "twitter:description", content: "A web platform for educators to enhance teaching through competency-based training, resource sharing, and student assessment." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b46aebc1-1c3f-4dc0-82c0-4fa3ae0f6bf1/id-preview-66536391--fd9ff02f-1dc1-40fe-90ac-68a358f201a9.lovable.app-1779032264083.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b46aebc1-1c3f-4dc0-82c0-4fa3ae0f6bf1/id-preview-66536391--fd9ff02f-1dc1-40fe-90ac-68a358f201a9.lovable.app-1779032264083.png" },
     ],
     links: [
       {
