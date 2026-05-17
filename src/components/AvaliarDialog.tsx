@@ -259,9 +259,9 @@ export function AvaliarDialog({
 
         <DialogFooter className="shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {fechado ? "Fechar" : "Cancelar"}
           </Button>
-          <Button onClick={handleSave}>Salvar avaliação</Button>
+          {!fechado && <Button onClick={handleSave}>Salvar avaliação</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>
