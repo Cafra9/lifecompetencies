@@ -1,27 +1,43 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Plus, TrendingUp, ChevronDown, BookOpen } from "lucide-react";
+import { Search, Filter, Plus, FileText, ChevronDown, BookOpen } from "lucide-react";
+import { AvaliarDialog, RelatorioDialog } from "@/components/AvaliarDialog";
+import { useAllAssessments, countByLevel } from "@/lib/assessments-store";
 
 export const Route = createFileRoute("/avaliacoes/")({
   component: AvaliacoesPage,
 });
 
 const alunos = [
-  { nome: "João Pedro", ano: "6º Ano", total: 2, mastering: 1, developing: 1, beginning: 0 },
-  { nome: "Maria Eduarda", ano: "6º Ano", total: 1, mastering: 0, developing: 1, beginning: 0 },
-  { nome: "Lucas Almeida", ano: "7º Ano", total: 1, mastering: 1, developing: 0, beginning: 0 },
-  { nome: "Ana Carolina", ano: "7º Ano", total: 0, mastering: 0, developing: 0, beginning: 0 },
-  { nome: "Gabriel Costa", ano: "8º Ano", total: 0, mastering: 0, developing: 0, beginning: 0 },
-  { nome: "Julia Martins", ano: "8º Ano", total: 0, mastering: 0, developing: 0, beginning: 0 },
-  { nome: "Pedro Henrique", ano: "9º Ano", total: 0, mastering: 0, developing: 0, beginning: 0 },
-  { nome: "Beatriz Lima", ano: "9º Ano", total: 0, mastering: 0, developing: 0, beginning: 0 },
+  { id: "joao-pedro", nome: "João Pedro", ano: "Infantil 5" },
+  { id: "maria-eduarda", nome: "Maria Eduarda", ano: "Infantil 5" },
+  { id: "lucas-almeida", nome: "Lucas Almeida", ano: "Infantil 4" },
+  { id: "ana-carolina", nome: "Ana Carolina", ano: "Infantil 4" },
+  { id: "gabriel-costa", nome: "Gabriel Costa", ano: "Infantil 5" },
+  { id: "julia-martins", nome: "Julia Martins", ano: "Infantil 5" },
+  { id: "pedro-henrique", nome: "Pedro Henrique", ano: "Infantil 4" },
+  { id: "beatriz-lima", nome: "Beatriz Lima", ano: "Infantil 5" },
 ];
 
 function AvaliacoesPage() {
+  const [busca, setBusca] = useState("");
+  const [avaliarId, setAvaliarId] = useState<string | null>(null);
+  const [relatorioId, setRelatorioId] = useState<string | null>(null);
+  const all = useAllAssessments();
+
+  const filtrados = alunos.filter(
+    (a) =>
+      a.nome.toLowerCase().includes(busca.toLowerCase()) ||
+      a.ano.toLowerCase().includes(busca.toLowerCase()),
+  );
+
+  const ativo = (id: string | null) => alunos.find((a) => a.id === id);
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -40,7 +56,12 @@ function AvaliacoesPage() {
         <CardContent className="p-4 flex gap-3 items-center">
           <div className="relative flex-1">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Buscar aluno por nome ou turma..." className="pl-9 bg-muted/50 border-0" />
+            <Input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar aluno por nome ou turma..."
+              className="pl-9 bg-muted/50 border-0"
+            />
           </div>
           <Button variant="outline" className="gap-2">
             <Filter className="h-4 w-4" />
@@ -51,32 +72,61 @@ function AvaliacoesPage() {
       </Card>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {alunos.map((a) => (
-          <Card key={a.nome}>
-            <CardContent className="p-5 space-y-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-semibold">{a.nome}</div>
-                  <div className="text-sm text-muted-foreground">{a.ano}</div>
+        {filtrados.map((a) => {
+          const av = all[a.id]?.avaliacoes ?? {};
+          const c = countByLevel(av);
+          return (
+            <Card key={a.id}>
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="font-semibold">{a.nome}</div>
+                    <div className="text-sm text-muted-foreground">{a.ano}</div>
+                  </div>
+                  <Button size="sm" className="gap-1" onClick={() => setAvaliarId(a.id)}>
+                    <Plus className="h-4 w-4" />Avaliar
+                  </Button>
                 </div>
-                <Button size="sm" className="gap-1"><Plus className="h-4 w-4" />Avaliar</Button>
-              </div>
 
-              <div className="space-y-2 text-sm">
-                <Row label="Total de Avaliações" value={<Badge variant="secondary">{a.total}</Badge>} />
-                <Row label={<span className="text-emerald-600">Mastering</span>} value={a.mastering} />
-                <Row label={<span className="text-blue-600">Developing</span>} value={a.developing} />
-                <Row label={<span className="text-muted-foreground">Beginning</span>} value={a.beginning} />
-              </div>
+                <div className="space-y-2 text-sm">
+                  <Row label="Habilidades avaliadas" value={<Badge variant="secondary">{c.total}/15</Badge>} />
+                  <Row label={<span className="text-emerald-600">Dominando</span>} value={c.dominando} />
+                  <Row label={<span className="text-blue-600">Desenvolvendo</span>} value={c.desenvolvendo} />
+                  <Row label={<span className="text-amber-600">Iniciando</span>} value={c.iniciando} />
+                </div>
 
-              <Button variant="outline" className="w-full gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Ver Histórico
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => setRelatorioId(a.id)}
+                  disabled={c.total === 0}
+                >
+                  <FileText className="h-4 w-4" />
+                  Gerar Relatório
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
+
+      {ativo(avaliarId) && (
+        <AvaliarDialog
+          open={!!avaliarId}
+          onOpenChange={(v) => !v && setAvaliarId(null)}
+          alunoId={ativo(avaliarId)!.id}
+          alunoNome={ativo(avaliarId)!.nome}
+        />
+      )}
+
+      {ativo(relatorioId) && (
+        <RelatorioDialog
+          open={!!relatorioId}
+          onOpenChange={(v) => !v && setRelatorioId(null)}
+          alunoId={ativo(relatorioId)!.id}
+          alunoNome={ativo(relatorioId)!.nome}
+        />
+      )}
     </div>
   );
 }
