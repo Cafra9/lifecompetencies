@@ -224,3 +224,80 @@ export const PLANO_EXEMPLO = {
     { comp: "Interpessoal · Comunicação", desc: "Expressão de ideias e explicações em português e inglês em pares e grupos." },
   ],
 };
+
+export const HOME_WELCOME = {
+  titulo: "Bem-vindo à plataforma Competências para a Vida",
+  texto:
+    "Este ambiente apoia o desenvolvimento profissional dos professores, oferecendo formação continuada, recursos pedagógicos e ferramentas de avaliação para acompanhar o crescimento integral dos estudantes.",
+};
+
+export const ESTRUTURA_TRILHA = [
+  "Introdução à competência",
+  "Fundamentos pedagógicos",
+  "Aplicações práticas por segmento",
+  "Estratégias didáticas",
+  "Estudos de caso",
+  "Recursos complementares",
+  "Quiz de autoavaliação",
+  "Certificado interno",
+];
+
+export const TIPOS_RECURSO = [
+  "Artigos",
+  "Vídeos",
+  "Podcasts",
+  "Infográficos",
+  "Guias práticos",
+  "Ferramentas digitais",
+  "Referências externas",
+];
+
+export const FILTROS_BIBLIOTECA = [
+  "Competência",
+  "Habilidade",
+  "Segmento",
+  "Disciplina",
+  "Tipo de recurso",
+];
+
+export const MODELO_PLANO = [
+  "Título",
+  "Objetivo",
+  "Competências trabalhadas",
+  "Habilidades desenvolvidas",
+  "Série/Turma",
+  "Disciplina",
+  "Descrição da atividade",
+  "Materiais necessários",
+  "Evidências de aprendizagem",
+  "Critérios de avaliação",
+  "Reflexão do professor",
+];
+
+export const INDICADORES_OBSERVAVEIS = [
+  "Demonstra a habilidade em situações orientadas.",
+  "Aplica a habilidade com autonomia crescente.",
+  "Transfere a habilidade para novos contextos.",
+];
+
+export const ESCALA_DESENVOLVIMENTO = [
+  { n: 1, label: "Inicial", desc: "Começa a demonstrar a habilidade com apoio." },
+  { n: 2, label: "Em Desenvolvimento", desc: "Demonstra a habilidade com apoio reduzido." },
+  { n: 3, label: "Proficiente", desc: "Demonstra a habilidade com autonomia." },
+  { n: 4, label: "Avançado", desc: "Transfere a habilidade para novos contextos." },
+];
+
+export const DESAFIOS_MENSAIS = [
+  { mes: "Janeiro", titulo: "Integração de competências", desc: "Criar uma atividade que integre duas competências." },
+  { mes: "Fevereiro", titulo: "Plano de aula inovador", desc: "Compartilhar um plano de aula inovador com a comunidade." },
+  { mes: "Março", titulo: "Ferramenta digital", desc: "Utilizar uma ferramenta digital para ampliar a aprendizagem." },
+  { mes: "Abril", titulo: "Evidências de progresso", desc: "Registrar evidências de progresso de um aluno." },
+];
+
+export const BADGES = [
+  { nome: "Inovador Pedagógico", desc: "Propõe abordagens criativas e originais." },
+  { nome: "Compartilhador de Práticas", desc: "Contribui com planos e materiais para a comunidade." },
+  { nome: "Mentor Colaborativo", desc: "Apoia colegas no desenvolvimento profissional." },
+  { nome: "Explorador Digital", desc: "Integra ferramentas digitais ao planejamento." },
+  { nome: "Avaliador Reflexivo", desc: "Registra evidências e avaliações de forma consistente." },
+];
