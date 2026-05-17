@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Plus, TrendingUp, ChevronDown } from "lucide-react";
+import { Search, Filter, Plus, TrendingUp, ChevronDown, BookOpen } from "lucide-react";
 
 export const Route = createFileRoute("/avaliacoes/")({
   component: AvaliacoesPage,
@@ -24,9 +24,16 @@ const alunos = [
 function AvaliacoesPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Avaliações</h1>
-        <p className="text-muted-foreground mt-1">Gerencie avaliações de competências dos alunos</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Avaliações</h1>
+          <p className="text-muted-foreground mt-1">Gerencie avaliações de competências dos alunos</p>
+        </div>
+        <Link to="/avaliacoes/rubrica">
+          <Button variant="outline" className="gap-2">
+            <BookOpen className="h-4 w-4" /> Ver Rubrica
+          </Button>
+        </Link>
       </div>
 
       <Card>
