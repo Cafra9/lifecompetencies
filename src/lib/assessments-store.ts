@@ -8,6 +8,8 @@ export interface StudentAssessment {
   alunoId: string;
   avaliacoes: AssessmentMap;
   observacao: string; // observação geral do professor sobre o aluno
+  fechado?: boolean; // quando true, a avaliação está finalizada e não pode ser editada
+  fechadoEm?: string;
   atualizadoEm: string;
 }
 
@@ -28,13 +30,14 @@ function writeAll(data: Record<string, StudentAssessment>) {
 }
 
 export function useStudentAssessment(alunoId: string) {
-  // Inicialização síncrona a partir do localStorage para evitar perda
-  // do estado já salvo no primeiro render (ex.: ao reabrir o diálogo).
   const [data, setData] = useState<AssessmentMap>(
     () => readAll()[alunoId]?.avaliacoes ?? {},
   );
   const [observacao, setObservacao] = useState<string>(
     () => readAll()[alunoId]?.observacao ?? "",
+  );
+  const [fechado, setFechado] = useState<boolean>(
+    () => readAll()[alunoId]?.fechado ?? false,
   );
 
   useEffect(() => {
@@ -42,6 +45,7 @@ export function useStudentAssessment(alunoId: string) {
       const all = readAll();
       setData(all[alunoId]?.avaliacoes ?? {});
       setObservacao(all[alunoId]?.observacao ?? "");
+      setFechado(all[alunoId]?.fechado ?? false);
     };
     load();
     window.addEventListener("isp-assessments-updated", load);
@@ -51,10 +55,13 @@ export function useStudentAssessment(alunoId: string) {
   const save = useCallback(
     (avaliacoes: AssessmentMap, observacao: string = "") => {
       const all = readAll();
+      const prev = all[alunoId];
       all[alunoId] = {
         alunoId,
         avaliacoes,
         observacao,
+        fechado: prev?.fechado ?? false,
+        fechadoEm: prev?.fechadoEm,
         atualizadoEm: new Date().toISOString(),
       };
       writeAll(all);
@@ -62,7 +69,23 @@ export function useStudentAssessment(alunoId: string) {
     [alunoId],
   );
 
-  return { data, observacao, save };
+  const setFechadoStatus = useCallback(
+    (value: boolean) => {
+      const all = readAll();
+      const prev = all[alunoId];
+      if (!prev) return;
+      all[alunoId] = {
+        ...prev,
+        fechado: value,
+        fechadoEm: value ? new Date().toISOString() : undefined,
+        atualizadoEm: new Date().toISOString(),
+      };
+      writeAll(all);
+    },
+    [alunoId],
+  );
+
+  return { data, observacao, fechado, save, setFechadoStatus };
 }
 
 export function useAllAssessments() {

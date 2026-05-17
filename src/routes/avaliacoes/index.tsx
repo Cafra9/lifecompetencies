@@ -5,9 +5,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Plus, FileText, ChevronDown, BookOpen } from "lucide-react";
+import {
+  Search,
+  Filter,
+  Plus,
+  FileText,
+  ChevronDown,
+  BookOpen,
+  Flame,
+  Lock,
+  Unlock,
+} from "lucide-react";
 import { AvaliarDialog, RelatorioDialog } from "@/components/AvaliarDialog";
-import { useAllAssessments, countByLevel } from "@/lib/assessments-store";
+import { HeatmapDialog } from "@/components/HeatmapDialog";
+import { useAllAssessments, countByLevel, useStudentAssessment } from "@/lib/assessments-store";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/avaliacoes/")({
   component: AvaliacoesPage,
@@ -28,7 +40,7 @@ function AvaliacoesPage() {
   const [busca, setBusca] = useState("");
   const [avaliarId, setAvaliarId] = useState<string | null>(null);
   const [relatorioId, setRelatorioId] = useState<string | null>(null);
-  const all = useAllAssessments();
+  const [heatmapId, setHeatmapId] = useState<string | null>(null);
 
   const filtrados = alunos.filter(
     (a) =>
@@ -72,42 +84,15 @@ function AvaliacoesPage() {
       </Card>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtrados.map((a) => {
-          const av = all[a.id]?.avaliacoes ?? {};
-          const c = countByLevel(av);
-          return (
-            <Card key={a.id}>
-              <CardContent className="p-5 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="font-semibold">{a.nome}</div>
-                    <div className="text-sm text-muted-foreground">{a.ano}</div>
-                  </div>
-                  <Button size="sm" className="gap-1" onClick={() => setAvaliarId(a.id)}>
-                    <Plus className="h-4 w-4" />Avaliar
-                  </Button>
-                </div>
-
-                <div className="space-y-2 text-sm">
-                  <Row label="Habilidades avaliadas" value={<Badge variant="secondary">{c.total}/15</Badge>} />
-                  <Row label={<span className="text-emerald-600">Dominando</span>} value={c.dominando} />
-                  <Row label={<span className="text-blue-600">Desenvolvendo</span>} value={c.desenvolvendo} />
-                  <Row label={<span className="text-amber-600">Iniciando</span>} value={c.iniciando} />
-                </div>
-
-                <Button
-                  variant="outline"
-                  className="w-full gap-2"
-                  onClick={() => setRelatorioId(a.id)}
-                  disabled={c.total === 0}
-                >
-                  <FileText className="h-4 w-4" />
-                  Gerar Relatório
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {filtrados.map((a) => (
+          <AlunoCard
+            key={a.id}
+            aluno={a}
+            onAvaliar={() => setAvaliarId(a.id)}
+            onRelatorio={() => setRelatorioId(a.id)}
+            onHeatmap={() => setHeatmapId(a.id)}
+          />
+        ))}
       </div>
 
       {ativo(avaliarId) && (
@@ -127,7 +112,110 @@ function AvaliacoesPage() {
           alunoNome={ativo(relatorioId)!.nome}
         />
       )}
+
+      {ativo(heatmapId) && (
+        <HeatmapDialog
+          open={!!heatmapId}
+          onOpenChange={(v) => !v && setHeatmapId(null)}
+          alunoId={ativo(heatmapId)!.id}
+          alunoNome={ativo(heatmapId)!.nome}
+        />
+      )}
     </div>
+  );
+}
+
+function AlunoCard({
+  aluno,
+  onAvaliar,
+  onRelatorio,
+  onHeatmap,
+}: {
+  aluno: { id: string; nome: string; ano: string };
+  onAvaliar: () => void;
+  onRelatorio: () => void;
+  onHeatmap: () => void;
+}) {
+  const { data, fechado, setFechadoStatus } = useStudentAssessment(aluno.id);
+  const c = countByLevel(data);
+
+  function toggleFechado() {
+    if (fechado) {
+      setFechadoStatus(false);
+      toast.success("Avaliação reaberta para edição.");
+    } else {
+      if (c.total === 0) {
+        toast.error("Registre ao menos uma habilidade antes de fechar.");
+        return;
+      }
+      const ok = window.confirm(
+        `Fechar a avaliação de ${aluno.nome}? Após fechada, não será possível editar ou excluir até que seja reaberta.`,
+      );
+      if (!ok) return;
+      setFechadoStatus(true);
+      toast.success("Avaliação fechada.");
+    }
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-5 space-y-4">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <div className="font-semibold flex items-center gap-2">
+              {aluno.nome}
+              {fechado && (
+                <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50 text-[10px]">
+                  Fechada
+                </Badge>
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground">{aluno.ano}</div>
+          </div>
+          <Button size="sm" className="gap-1" onClick={onAvaliar}>
+            <Plus className="h-4 w-4" />
+            {fechado ? "Ver" : "Avaliar"}
+          </Button>
+        </div>
+
+        <div className="space-y-2 text-sm">
+          <Row label="Habilidades avaliadas" value={<Badge variant="secondary">{c.total}/15</Badge>} />
+          <Row label={<span className="text-red-300">Dominando</span>} value={c.dominando} />
+          <Row label={<span className="text-red-500">Desenvolvendo</span>} value={c.desenvolvendo} />
+          <Row label={<span className="text-red-700">Iniciando</span>} value={c.iniciando} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="outline"
+            className="w-full gap-2"
+            onClick={onHeatmap}
+            disabled={c.total === 0}
+          >
+            <Flame className="h-4 w-4" />
+            Heatmap
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full gap-2"
+            onClick={onRelatorio}
+            disabled={c.total === 0}
+          >
+            <FileText className="h-4 w-4" />
+            Relatório
+          </Button>
+        </div>
+
+        <Button
+          variant={fechado ? "secondary" : "outline"}
+          className="w-full gap-2"
+          onClick={toggleFechado}
+        >
+          {fechado ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+          {fechado ? "Reabrir avaliação" : "Fechar avaliação"}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 

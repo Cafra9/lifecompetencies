@@ -32,25 +32,27 @@ import ispLogo from "@/assets/isp-logo.png";
 
 const NIVEIS: Nivel[] = ["iniciando", "desenvolvendo", "dominando"];
 
+// Heatmap em tons de vermelho: iniciando = mais quente (intenso),
+// dominando = mais frio (claro). Padronagem inspirada em heatmaps.
 const NIVEL_BTN: Record<Nivel, string> = {
   iniciando:
-    "data-[selected=true]:bg-amber-500 data-[selected=true]:text-white data-[selected=true]:border-amber-500",
+    "data-[selected=true]:bg-red-600 data-[selected=true]:text-white data-[selected=true]:border-red-600",
   desenvolvendo:
-    "data-[selected=true]:bg-blue-500 data-[selected=true]:text-white data-[selected=true]:border-blue-500",
+    "data-[selected=true]:bg-red-400 data-[selected=true]:text-white data-[selected=true]:border-red-400",
   dominando:
-    "data-[selected=true]:bg-emerald-500 data-[selected=true]:text-white data-[selected=true]:border-emerald-500",
+    "data-[selected=true]:bg-red-200 data-[selected=true]:text-red-900 data-[selected=true]:border-red-300",
 };
 
 const NIVEL_HEADER: Record<Nivel, string> = {
-  iniciando: "border-amber-200 bg-amber-50/60",
-  desenvolvendo: "border-blue-200 bg-blue-50/60",
-  dominando: "border-emerald-200 bg-emerald-50/60",
+  iniciando: "border-red-300 bg-red-100/70",
+  desenvolvendo: "border-red-200 bg-red-50/80",
+  dominando: "border-red-100 bg-red-50/40",
 };
 
 const NIVEL_DOT: Record<Nivel, string> = {
-  iniciando: "bg-amber-500",
-  desenvolvendo: "bg-blue-500",
-  dominando: "bg-emerald-500",
+  iniciando: "bg-red-600",
+  desenvolvendo: "bg-red-400",
+  dominando: "bg-red-200",
 };
 
 function key(comp: string, hab: string) {
@@ -68,24 +70,39 @@ export function AvaliarDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data, observacao, save } = useStudentAssessment(alunoId);
+  const { data, observacao, fechado, save } = useStudentAssessment(alunoId);
   const [local, setLocal] = useState<AssessmentMap>(data);
   const [localObs, setLocalObs] = useState<string>(observacao);
   const [openItems, setOpenItems] = useState<Record<string, string[]>>({});
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
     if (open) {
       setLocal(data);
       setLocalObs(observacao);
       setOpenItems({});
+      // pequeno delay para evitar que o efeito de auto-save dispare
+      // com o estado anterior na primeira renderização após abrir.
+      hydratedRef.current = false;
+      requestAnimationFrame(() => {
+        hydratedRef.current = true;
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Auto-save contínuo: nada se perde se o professor fechar a aba
+  // ou sair do site no meio do preenchimento.
+  useEffect(() => {
+    if (!open || fechado || !hydratedRef.current) return;
+    save(local, localObs);
+  }, [local, localObs, open, fechado, save]);
 
   const total = RUBRICA_INFANTIL.reduce((acc, c) => acc + c.habilidades.length, 0);
   const preenchidos = Object.keys(local).length;
 
   function setNivel(comp: string, hab: string, nivel: Nivel, slug: string) {
+    if (fechado) return;
     setLocal((prev) => {
       const k = key(comp, hab);
       if (prev[k] === nivel) {
@@ -94,7 +111,6 @@ export function AvaliarDialog({
       }
       return { ...prev, [k]: nivel };
     });
-    // recolhe a habilidade ao escolher um nível
     setOpenItems((prev) => ({
       ...prev,
       [slug]: (prev[slug] ?? []).filter((v) => v !== key(comp, hab)),
@@ -111,15 +127,24 @@ export function AvaliarDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90dvh] max-h-[90dvh] flex flex-col overflow-hidden">
         <DialogHeader className="shrink-0">
-          <DialogTitle>Avaliar {alunoNome}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Avaliar {alunoNome}
+            {fechado && (
+              <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50">
+                Avaliação fechada
+              </Badge>
+            )}
+          </DialogTitle>
           <DialogDescription>
-            Rubrica Educação Infantil (4-7 anos) · Expanda cada habilidade para ver a rubrica completa.
+            {fechado
+              ? "Esta avaliação foi finalizada. Reabra no card do aluno para editar."
+              : "Rubrica Educação Infantil (4-7 anos) · Suas alterações são salvas automaticamente."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex shrink-0 items-center gap-2 text-sm">
           <Badge variant="secondary">{preenchidos}/{total} habilidades</Badge>
-          {(preenchidos > 0 || localObs.trim()) && (
+          {!fechado && (preenchidos > 0 || localObs.trim()) && (
             <Button
               variant="ghost"
               size="sm"
@@ -223,6 +248,7 @@ export function AvaliarDialog({
                 placeholder="Registre observações gerais sobre o desenvolvimento, comportamento, evidências em sala e recomendações para este aluno."
                 className="min-h-[140px] text-sm"
                 maxLength={4000}
+                readOnly={fechado}
               />
               <div className="text-[11px] text-muted-foreground mt-1 text-right">
                 {localObs.length}/4000
@@ -233,9 +259,9 @@ export function AvaliarDialog({
 
         <DialogFooter className="shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {fechado ? "Fechar" : "Cancelar"}
           </Button>
-          <Button onClick={handleSave}>Salvar avaliação</Button>
+          {!fechado && <Button onClick={handleSave}>Salvar avaliação</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>
