@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Dialog,
@@ -11,7 +11,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { Sparkles, Copy, Download, Check, Loader2, RotateCcw } from "lucide-react";
 import {
@@ -22,15 +27,31 @@ import {
 import {
   useStudentAssessment,
   type AssessmentMap,
+  type NotesMap,
 } from "@/lib/assessments-store";
 import { gerarRelatorioAluno } from "@/lib/report.functions";
 
 const NIVEIS: Nivel[] = ["iniciando", "desenvolvendo", "dominando"];
 
 const NIVEL_BTN: Record<Nivel, string> = {
-  iniciando: "data-[selected=true]:bg-amber-500 data-[selected=true]:text-white data-[selected=true]:border-amber-500",
-  desenvolvendo: "data-[selected=true]:bg-blue-500 data-[selected=true]:text-white data-[selected=true]:border-blue-500",
-  dominando: "data-[selected=true]:bg-emerald-500 data-[selected=true]:text-white data-[selected=true]:border-emerald-500",
+  iniciando:
+    "data-[selected=true]:bg-amber-500 data-[selected=true]:text-white data-[selected=true]:border-amber-500",
+  desenvolvendo:
+    "data-[selected=true]:bg-blue-500 data-[selected=true]:text-white data-[selected=true]:border-blue-500",
+  dominando:
+    "data-[selected=true]:bg-emerald-500 data-[selected=true]:text-white data-[selected=true]:border-emerald-500",
+};
+
+const NIVEL_HEADER: Record<Nivel, string> = {
+  iniciando: "border-amber-200 bg-amber-50/60",
+  desenvolvendo: "border-blue-200 bg-blue-50/60",
+  dominando: "border-emerald-200 bg-emerald-50/60",
+};
+
+const NIVEL_DOT: Record<Nivel, string> = {
+  iniciando: "bg-amber-500",
+  desenvolvendo: "bg-blue-500",
+  dominando: "bg-emerald-500",
 };
 
 function key(comp: string, hab: string) {
@@ -48,22 +69,24 @@ export function AvaliarDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data, save } = useStudentAssessment(alunoId);
+  const { data, notes, save } = useStudentAssessment(alunoId);
   const [local, setLocal] = useState<AssessmentMap>(data);
+  const [localNotes, setLocalNotes] = useState<NotesMap>(notes);
 
-  // Reset local state quando abre
-  useMemo(() => {
-    if (open) setLocal(data);
+  useEffect(() => {
+    if (open) {
+      setLocal(data);
+      setLocalNotes(notes);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const total = RUBRICA_INFANTIL.reduce((acc, c) => acc + c.habilidades.length, 0);
   const preenchidos = Object.keys(local).length;
 
-  function set(comp: string, hab: string, nivel: Nivel) {
+  function setNivel(comp: string, hab: string, nivel: Nivel) {
     setLocal((prev) => {
       const k = key(comp, hab);
-      // Toggle: clicar no mesmo nível remove
       if (prev[k] === nivel) {
         const { [k]: _, ...rest } = prev;
         return rest;
@@ -72,26 +95,45 @@ export function AvaliarDialog({
     });
   }
 
+  function setNota(comp: string, hab: string, value: string) {
+    setLocalNotes((prev) => {
+      const k = key(comp, hab);
+      if (!value.trim()) {
+        const { [k]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [k]: value };
+    });
+  }
+
   function handleSave() {
-    save(local);
+    save(local, localNotes);
     toast.success(`Avaliação salva (${Object.keys(local).length}/${total} habilidades)`);
     onOpenChange(false);
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[90dvh] max-h-[90dvh] flex flex-col overflow-hidden">
+      <DialogContent className="max-w-4xl h-[90dvh] max-h-[90dvh] flex flex-col overflow-hidden">
         <DialogHeader className="shrink-0">
           <DialogTitle>Avaliar {alunoNome}</DialogTitle>
           <DialogDescription>
-            Rubrica Educação Infantil (4-7 anos) · Toque no nível para cada habilidade. Toque de novo para limpar.
+            Rubrica Educação Infantil (4-7 anos) · Expanda cada habilidade para ver a rubrica completa e registrar observações.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex shrink-0 items-center gap-2 text-sm">
           <Badge variant="secondary">{preenchidos}/{total} habilidades</Badge>
-          {preenchidos > 0 && (
-            <Button variant="ghost" size="sm" className="h-7 gap-1" onClick={() => setLocal({})}>
+          {(preenchidos > 0 || Object.keys(localNotes).length > 0) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1"
+              onClick={() => {
+                setLocal({});
+                setLocalNotes({});
+              }}
+            >
               <RotateCcw className="h-3 w-3" /> Limpar tudo
             </Button>
           )}
@@ -102,55 +144,96 @@ export function AvaliarDialog({
             {RUBRICA_INFANTIL.map((c) => (
               <div key={c.slug}>
                 <div className="text-sm font-semibold text-foreground mb-2">{c.competencia}</div>
-                <div className="space-y-2">
+                <Accordion type="multiple" className="space-y-2">
                   {c.habilidades.map((h) => {
                     const k = key(c.competencia, h.habilidade);
                     const cur = local[k];
+                    const nota = localNotes[k] ?? "";
                     return (
-                      <div
+                      <AccordionItem
                         key={h.habilidade}
-                        className="grid grid-cols-1 sm:grid-cols-[1fr_auto] items-center gap-2 rounded-md border p-2.5"
+                        value={k}
+                        className="rounded-md border bg-card data-[state=open]:shadow-sm"
                       >
-                        <div className="text-sm font-medium">{h.habilidade}</div>
-                        <div className="flex gap-1">
-                          {NIVEIS.map((n) => (
-                            <HoverCard key={n} openDelay={120} closeDelay={80}>
-                              <HoverCardTrigger asChild>
-                                <button
-                                  type="button"
-                                  data-selected={cur === n}
-                                  onClick={() => set(c.competencia, h.habilidade, n)}
-                                  className={`text-xs px-3 py-1.5 rounded-md border transition-colors hover:bg-muted ${NIVEL_BTN[n]}`}
-                                >
-                                  {NIVEL_LABEL[n]}
-                                </button>
-                              </HoverCardTrigger>
-                              <HoverCardContent side="top" align="end" className="w-80 space-y-3 text-sm">
-                                <div>
-                                  <div className="text-xs font-semibold uppercase text-muted-foreground">{c.competencia} · {h.habilidade}</div>
-                                  <div className="mt-1 font-semibold text-foreground">{NIVEL_LABEL[n]}</div>
-                                </div>
-                                <p className="leading-relaxed text-muted-foreground">{h.descritores[n]}</p>
-                                <ul className="list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
-                                  {h.exemplos[n].map((exemplo) => (
-                                    <li key={exemplo}>{exemplo}</li>
-                                  ))}
-                                </ul>
-                              </HoverCardContent>
-                            </HoverCard>
-                          ))}
+                        <div className="flex items-center gap-2 pl-3 pr-2 py-1">
+                          <AccordionTrigger className="flex-1 py-2 hover:no-underline">
+                            <div className="flex items-center gap-2 text-left">
+                              <span
+                                className={`h-2 w-2 rounded-full ${cur ? NIVEL_DOT[cur] : "bg-muted-foreground/30"}`}
+                              />
+                              <span className="text-sm font-medium">{h.habilidade}</span>
+                              {cur && (
+                                <Badge variant="outline" className="ml-1 text-[10px] uppercase">
+                                  {NIVEL_LABEL[cur]}
+                                </Badge>
+                              )}
+                              {nota.trim() && (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  obs
+                                </Badge>
+                              )}
+                            </div>
+                          </AccordionTrigger>
                         </div>
-                      </div>
+
+                        <AccordionContent className="px-3 pb-3">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            {NIVEIS.map((n) => {
+                              const selected = cur === n;
+                              return (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  data-selected={selected}
+                                  onClick={() => setNivel(c.competencia, h.habilidade, n)}
+                                  className={`text-left rounded-md border p-3 transition-colors ${NIVEL_HEADER[n]} hover:brightness-95 ${NIVEL_BTN[n]} ${selected ? "ring-2 ring-offset-1 ring-foreground/20" : ""}`}
+                                >
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-xs font-semibold uppercase tracking-wide">
+                                      {NIVEL_LABEL[n]}
+                                    </span>
+                                    {selected && <Check className="h-3.5 w-3.5" />}
+                                  </div>
+                                  <p className="text-xs leading-relaxed text-foreground/80">
+                                    {h.descritores[n]}
+                                  </p>
+                                  {h.exemplos[n]?.length > 0 && (
+                                    <ul className="mt-2 list-disc space-y-0.5 pl-4 text-[11px] leading-relaxed text-foreground/70">
+                                      {h.exemplos[n].slice(0, 3).map((ex) => (
+                                        <li key={ex}>{ex}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <div className="mt-3">
+                            <label className="text-xs font-medium text-muted-foreground">
+                              Observação do professor (opcional)
+                            </label>
+                            <Textarea
+                              value={nota}
+                              onChange={(e) => setNota(c.competencia, h.habilidade, e.target.value)}
+                              placeholder="Anote evidências, contexto ou recomendações específicas para esta habilidade."
+                              className="mt-1 min-h-[60px] text-sm"
+                            />
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
                     );
                   })}
-                </div>
+                </Accordion>
               </div>
             ))}
           </div>
         </div>
 
         <DialogFooter className="shrink-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
           <Button onClick={handleSave}>Salvar avaliação</Button>
         </DialogFooter>
       </DialogContent>
@@ -169,7 +252,7 @@ export function RelatorioDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data } = useStudentAssessment(alunoId);
+  const { data, notes } = useStudentAssessment(alunoId);
   const [texto, setTexto] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -178,7 +261,10 @@ export function RelatorioDialog({
   async function handleGerar() {
     const avaliacoes = Object.entries(data).map(([k, nivel]) => {
       const [competencia, habilidade] = k.split("::");
-      return { competencia, habilidade, nivel };
+      const observacao = notes[k]?.trim();
+      return observacao
+        ? { competencia, habilidade, nivel, observacao }
+        : { competencia, habilidade, nivel };
     });
 
     if (avaliacoes.length === 0) {
@@ -226,10 +312,13 @@ export function RelatorioDialog({
   }
 
   // Gera automaticamente ao abrir
-  useMemo(() => {
-    if (open && !texto && !loading) handleGerar();
+  useEffect(() => {
+    if (open) {
+      setTexto("");
+      handleGerar();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, alunoId]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -240,7 +329,7 @@ export function RelatorioDialog({
             Relatório · {alunoNome}
           </DialogTitle>
           <DialogDescription>
-            Gerado por IA com base nas avaliações registradas.
+            Gerado por IA com base nas avaliações e observações registradas.
           </DialogDescription>
         </DialogHeader>
 
