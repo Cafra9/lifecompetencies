@@ -8,6 +8,8 @@ export interface StudentAssessment {
   alunoId: string;
   avaliacoes: AssessmentMap;
   observacao: string; // observação geral do professor sobre o aluno
+  fechado?: boolean; // quando true, a avaliação está finalizada e não pode ser editada
+  fechadoEm?: string;
   atualizadoEm: string;
 }
 
