@@ -75,10 +75,10 @@ function Biblioteca() {
             <div className="bg-muted/50 p-3 font-medium">Subject Outcomes (KSU)</div>
             <div className="bg-muted/50 p-3 font-medium">Life Competencies Outcomes</div>
             {["Knowledge", "Skill", "Understanding"].map((k, i) => (
-              <>
-                <div key={`a-${k}`} className="bg-background p-3">• {k}</div>
-                <div key={`b-${k}`} className="bg-background p-3">• LC {i + 1}</div>
-              </>
+              <div key={k} className="contents">
+                <div className="bg-background p-3">• {k}</div>
+                <div className="bg-background p-3">• LC {i + 1}</div>
+              </div>
             ))}
           </div>
         </CardContent>
