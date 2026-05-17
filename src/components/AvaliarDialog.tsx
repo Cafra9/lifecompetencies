@@ -32,25 +32,27 @@ import ispLogo from "@/assets/isp-logo.png";
 
 const NIVEIS: Nivel[] = ["iniciando", "desenvolvendo", "dominando"];
 
+// Heatmap em tons de vermelho: iniciando = mais quente (intenso),
+// dominando = mais frio (claro). Padronagem inspirada em heatmaps.
 const NIVEL_BTN: Record<Nivel, string> = {
   iniciando:
-    "data-[selected=true]:bg-amber-500 data-[selected=true]:text-white data-[selected=true]:border-amber-500",
+    "data-[selected=true]:bg-red-600 data-[selected=true]:text-white data-[selected=true]:border-red-600",
   desenvolvendo:
-    "data-[selected=true]:bg-blue-500 data-[selected=true]:text-white data-[selected=true]:border-blue-500",
+    "data-[selected=true]:bg-red-400 data-[selected=true]:text-white data-[selected=true]:border-red-400",
   dominando:
-    "data-[selected=true]:bg-emerald-500 data-[selected=true]:text-white data-[selected=true]:border-emerald-500",
+    "data-[selected=true]:bg-red-200 data-[selected=true]:text-red-900 data-[selected=true]:border-red-300",
 };
 
 const NIVEL_HEADER: Record<Nivel, string> = {
-  iniciando: "border-amber-200 bg-amber-50/60",
-  desenvolvendo: "border-blue-200 bg-blue-50/60",
-  dominando: "border-emerald-200 bg-emerald-50/60",
+  iniciando: "border-red-300 bg-red-100/70",
+  desenvolvendo: "border-red-200 bg-red-50/80",
+  dominando: "border-red-100 bg-red-50/40",
 };
 
 const NIVEL_DOT: Record<Nivel, string> = {
-  iniciando: "bg-amber-500",
-  desenvolvendo: "bg-blue-500",
-  dominando: "bg-emerald-500",
+  iniciando: "bg-red-600",
+  desenvolvendo: "bg-red-400",
+  dominando: "bg-red-200",
 };
 
 function key(comp: string, hab: string) {
