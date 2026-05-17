@@ -1,0 +1,191 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { AppLayout } from "@/components/AppLayout";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
+import { competencyColor, LEVEL_LABEL, LEVEL_VALUE } from "@/lib/competencies";
+import { ArrowLeft, Upload, Download } from "lucide-react";
+import { toast } from "sonner";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
+import { exportStudentReport } from "@/lib/pdf";
+
+export const Route = createFileRoute("/alunos/$id")({ component: () => <AppLayout><AlunoDetalhe /></AppLayout> });
+
+function AlunoDetalhe() {
+  const { id } = Route.useParams();
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [skillId, setSkillId] = useState<string>("");
+  const [nivel, setNivel] = useState<string>("proficiente");
+  const [obs, setObs] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const { data: aluno } = useQuery({
+    queryKey: ["student", id],
+    queryFn: async () => (await supabase.from("students").select("*, classes(nome, segmento)").eq("id", id).maybeSingle()).data,
+  });
+  const { data: comps } = useQuery({
+    queryKey: ["competencies-with-skills"],
+    queryFn: async () => (await supabase.from("competencies").select("*, skills(*)").order("ordem")).data ?? [],
+  });
+  const { data: avals } = useQuery({
+    queryKey: ["assessments", id],
+    queryFn: async () => (await supabase.from("assessments").select("*, skills(nome, competency_id, competencies(slug, nome))").eq("student_id", id).order("data", { ascending: false })).data ?? [],
+  });
+
+  const radar = useMemo(() => {
+    if (!comps || !avals) return [];
+    return comps.map((c: any) => {
+      const skillIds = c.skills?.map((s: any) => s.id) ?? [];
+      const items = avals.filter((a: any) => skillIds.includes(a.skill_id));
+      const avg = items.length ? items.reduce((s: number, a: any) => s + (LEVEL_VALUE[a.nivel] || 0), 0) / items.length : 0;
+      return { competencia: c.nome.replace("Competência ", ""), valor: Number(avg.toFixed(2)) };
+    });
+  }, [comps, avals]);
+
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user || !skillId) return;
+    setBusy(true);
+    let evidence_url: string | null = null;
+    if (file) {
+      const path = `${user.id}/${id}/${Date.now()}_${file.name}`;
+      const { error: upErr } = await supabase.storage.from("assessment-evidences").upload(path, file);
+      if (upErr) { toast.error(upErr.message); setBusy(false); return; }
+      evidence_url = path;
+    }
+    const { error } = await supabase.from("assessments").insert({
+      student_id: id, skill_id: skillId, nivel: nivel as any, observacao: obs || null, evidence_url, created_by: user.id,
+    });
+    setBusy(false);
+    if (error) toast.error(error.message);
+    else { toast.success("Avaliação registrada"); setSkillId(""); setObs(""); setFile(null); qc.invalidateQueries({ queryKey: ["assessments", id] }); }
+  }
+
+  function gerarPDF() {
+    if (!aluno || !avals) return;
+    exportStudentReport({
+      aluno: aluno.nome,
+      turma: aluno.classes?.nome || "",
+      radar,
+      avals: avals.map((a: any) => ({
+        habilidade: a.skills?.nome || "",
+        competencia: a.skills?.competencies?.nome || "",
+        nivel: LEVEL_LABEL[a.nivel],
+        data: a.data,
+        observacao: a.observacao || "",
+      })),
+    });
+  }
+
+  if (!aluno) return <div>Carregando…</div>;
+
+  return (
+    <div className="space-y-6">
+      <Button asChild variant="ghost" size="sm"><Link to="/turmas">  <ArrowLeft className="h-4 w-4 mr-1" /> Turmas</Link></Button>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">{aluno.nome}</h1>
+          <p className="text-muted-foreground">{aluno.classes?.nome}</p>
+        </div>
+        <Button onClick={gerarPDF} variant="outline"><Download className="h-4 w-4 mr-2" /> Relatório PDF</Button>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle>Radar de Competências</CardTitle><CardDescription>Média de níveis por competência (1–4)</CardDescription></CardHeader>
+          <CardContent className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={radar}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="competencia" tick={{ fontSize: 12 }} />
+                <PolarRadiusAxis domain={[0, 4]} tick={{ fontSize: 10 }} />
+                <Radar dataKey="valor" stroke="hsl(var(--color-primary))" fill="var(--color-primary)" fillOpacity={0.4} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Nova avaliação</CardTitle></CardHeader>
+          <CardContent>
+            <form onSubmit={salvar} className="space-y-3">
+              <div>
+                <Label>Habilidade</Label>
+                <Select value={skillId} onValueChange={setSkillId}>
+                  <SelectTrigger><SelectValue placeholder="Escolha uma habilidade" /></SelectTrigger>
+                  <SelectContent>
+                    {comps?.map((c: any) => (
+                      <div key={c.id}>
+                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">{c.nome}</div>
+                        {c.skills?.sort((a: any, b: any) => a.ordem - b.ordem).map((s: any) => (
+                          <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                        ))}
+                      </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Nível</Label>
+                <Select value={nivel} onValueChange={setNivel}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(LEVEL_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Observação</Label>
+                <Textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={3} />
+              </div>
+              <div>
+                <Label>Evidência (opcional)</Label>
+                <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              </div>
+              <Button type="submit" disabled={busy || !skillId} className="w-full">
+                {busy ? "Salvando..." : <><Upload className="h-4 w-4 mr-2" /> Registrar avaliação</>}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle>Histórico</CardTitle></CardHeader>
+        <CardContent>
+          {avals?.length === 0 ? (
+            <div className="text-sm text-muted-foreground py-6 text-center">Nenhuma avaliação registrada ainda.</div>
+          ) : (
+            <div className="space-y-2">
+              {avals?.map((a: any) => {
+                const col = competencyColor(a.skills?.competencies?.slug);
+                return (
+                  <div key={a.id} className="flex items-start gap-3 border rounded-lg p-3">
+                    <div className={`h-2 w-2 rounded-full mt-2 ${col.bg}`} />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-sm">{a.skills?.nome}</div>
+                        <div className="text-xs text-muted-foreground">{new Date(a.data).toLocaleDateString("pt-BR")}</div>
+                      </div>
+                      <div className="text-xs text-muted-foreground">{a.skills?.competencies?.nome} · {LEVEL_LABEL[a.nivel]}</div>
+                      {a.observacao && <p className="text-sm mt-1">{a.observacao}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
