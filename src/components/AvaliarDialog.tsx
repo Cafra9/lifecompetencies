@@ -71,11 +71,13 @@ export function AvaliarDialog({
   const { data, observacao, save } = useStudentAssessment(alunoId);
   const [local, setLocal] = useState<AssessmentMap>(data);
   const [localObs, setLocalObs] = useState<string>(observacao);
+  const [openItems, setOpenItems] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     if (open) {
       setLocal(data);
       setLocalObs(observacao);
+      setOpenItems({});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -83,7 +85,7 @@ export function AvaliarDialog({
   const total = RUBRICA_INFANTIL.reduce((acc, c) => acc + c.habilidades.length, 0);
   const preenchidos = Object.keys(local).length;
 
-  function setNivel(comp: string, hab: string, nivel: Nivel) {
+  function setNivel(comp: string, hab: string, nivel: Nivel, slug: string) {
     setLocal((prev) => {
       const k = key(comp, hab);
       if (prev[k] === nivel) {
@@ -92,6 +94,11 @@ export function AvaliarDialog({
       }
       return { ...prev, [k]: nivel };
     });
+    // recolhe a habilidade ao escolher um nível
+    setOpenItems((prev) => ({
+      ...prev,
+      [slug]: (prev[slug] ?? []).filter((v) => v !== key(comp, hab)),
+    }));
   }
 
   function handleSave() {
