@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { OBJETIVOS_SEMESTRE, BIG5_STATEMENTS } from "@/lib/iSP-content";
+import { OBJETIVOS_SEMESTRE, BIG5_STATEMENTS, HOME_WELCOME, DESAFIOS_MENSAIS } from "@/lib/iSP-content";
 import { competencyColor } from "@/lib/competencies";
-import { Target, BookOpen, ClipboardCheck, GraduationCap } from "lucide-react";
+import { Target, BookOpen, ClipboardCheck, GraduationCap, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: () => (
