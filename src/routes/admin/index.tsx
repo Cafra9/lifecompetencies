@@ -46,11 +46,11 @@ function CompsAdmin() {
     queryFn: async () => (await supabase.from("competencies").select("*, skills(*)").order("ordem")).data ?? [],
   });
 
-  async function saveSkill(id: string, patch: any) {
+  async function saveSkill(id: string, patch: Record<string, unknown>) {
     const { error } = await supabase.from("skills").update(patch).eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Habilidade atualizada"); qc.invalidateQueries({ queryKey: ["admin-comps"] }); }
   }
-  async function saveComp(id: string, patch: any) {
+  async function saveComp(id: string, patch: Record<string, unknown>) {
     const { error } = await supabase.from("competencies").update(patch).eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Competência atualizada"); qc.invalidateQueries({ queryKey: ["admin-comps"] }); }
   }
