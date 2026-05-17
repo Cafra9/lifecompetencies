@@ -71,11 +71,13 @@ export function AvaliarDialog({
   const { data, observacao, save } = useStudentAssessment(alunoId);
   const [local, setLocal] = useState<AssessmentMap>(data);
   const [localObs, setLocalObs] = useState<string>(observacao);
+  const [openItems, setOpenItems] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     if (open) {
       setLocal(data);
       setLocalObs(observacao);
+      setOpenItems({});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -83,7 +85,7 @@ export function AvaliarDialog({
   const total = RUBRICA_INFANTIL.reduce((acc, c) => acc + c.habilidades.length, 0);
   const preenchidos = Object.keys(local).length;
 
-  function setNivel(comp: string, hab: string, nivel: Nivel) {
+  function setNivel(comp: string, hab: string, nivel: Nivel, slug: string) {
     setLocal((prev) => {
       const k = key(comp, hab);
       if (prev[k] === nivel) {
@@ -92,6 +94,11 @@ export function AvaliarDialog({
       }
       return { ...prev, [k]: nivel };
     });
+    // recolhe a habilidade ao escolher um nível
+    setOpenItems((prev) => ({
+      ...prev,
+      [slug]: (prev[slug] ?? []).filter((v) => v !== key(comp, hab)),
+    }));
   }
 
   function handleSave() {
@@ -132,7 +139,12 @@ export function AvaliarDialog({
             {RUBRICA_INFANTIL.map((c) => (
               <div key={c.slug}>
                 <div className="text-sm font-semibold text-foreground mb-2">{c.competencia}</div>
-                <Accordion type="multiple" className="space-y-2">
+                <Accordion
+                  type="multiple"
+                  className="space-y-2"
+                  value={openItems[c.slug] ?? []}
+                  onValueChange={(v) => setOpenItems((prev) => ({ ...prev, [c.slug]: v }))}
+                >
                   {c.habilidades.map((h) => {
                     const k = key(c.competencia, h.habilidade);
                     const cur = local[k];
@@ -167,7 +179,7 @@ export function AvaliarDialog({
                                   key={n}
                                   type="button"
                                   data-selected={selected}
-                                  onClick={() => setNivel(c.competencia, h.habilidade, n)}
+                                  onClick={() => setNivel(c.competencia, h.habilidade, n, c.slug)}
                                   className={`text-left rounded-md border p-3 transition-colors ${NIVEL_HEADER[n]} hover:brightness-95 ${NIVEL_BTN[n]} ${selected ? "ring-2 ring-offset-1 ring-foreground/20" : ""}`}
                                 >
                                   <div className="flex items-center justify-between mb-1.5">
