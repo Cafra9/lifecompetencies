@@ -21,6 +21,7 @@ import { Route as AvaliacoesIndexRouteImport } from './routes/avaliacoes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as TurmasIdRouteImport } from './routes/turmas/$id'
 import { Route as FormacaoSlugRouteImport } from './routes/formacao/$slug'
+import { Route as AvaliacoesRubricaRouteImport } from './routes/avaliacoes/rubrica'
 import { Route as AlunosIdRouteImport } from './routes/alunos/$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -83,6 +84,11 @@ const FormacaoSlugRoute = FormacaoSlugRouteImport.update({
   path: '/formacao/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AvaliacoesRubricaRoute = AvaliacoesRubricaRouteImport.update({
+  id: '/avaliacoes/rubrica',
+  path: '/avaliacoes/rubrica',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AlunosIdRoute = AlunosIdRouteImport.update({
   id: '/alunos/$id',
   path: '/alunos/$id',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/alunos/$id': typeof AlunosIdRoute
+  '/avaliacoes/rubrica': typeof AvaliacoesRubricaRoute
   '/formacao/$slug': typeof FormacaoSlugRoute
   '/turmas/$id': typeof TurmasIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/alunos/$id': typeof AlunosIdRoute
+  '/avaliacoes/rubrica': typeof AvaliacoesRubricaRoute
   '/formacao/$slug': typeof FormacaoSlugRoute
   '/turmas/$id': typeof TurmasIdRoute
   '/admin': typeof AdminIndexRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/alunos/$id': typeof AlunosIdRoute
+  '/avaliacoes/rubrica': typeof AvaliacoesRubricaRoute
   '/formacao/$slug': typeof FormacaoSlugRoute
   '/turmas/$id': typeof TurmasIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/alunos/$id'
+    | '/avaliacoes/rubrica'
     | '/formacao/$slug'
     | '/turmas/$id'
     | '/admin/'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/alunos/$id'
+    | '/avaliacoes/rubrica'
     | '/formacao/$slug'
     | '/turmas/$id'
     | '/admin'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/alunos/$id'
+    | '/avaliacoes/rubrica'
     | '/formacao/$slug'
     | '/turmas/$id'
     | '/admin/'
@@ -187,6 +199,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   AlunosIdRoute: typeof AlunosIdRoute
+  AvaliacoesRubricaRoute: typeof AvaliacoesRubricaRoute
   FormacaoSlugRoute: typeof FormacaoSlugRoute
   TurmasIdRoute: typeof TurmasIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FormacaoSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/avaliacoes/rubrica': {
+      id: '/avaliacoes/rubrica'
+      path: '/avaliacoes/rubrica'
+      fullPath: '/avaliacoes/rubrica'
+      preLoaderRoute: typeof AvaliacoesRubricaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/alunos/$id': {
       id: '/alunos/$id'
       path: '/alunos/$id'
@@ -299,6 +319,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   AlunosIdRoute: AlunosIdRoute,
+  AvaliacoesRubricaRoute: AvaliacoesRubricaRoute,
   FormacaoSlugRoute: FormacaoSlugRoute,
   TurmasIdRoute: TurmasIdRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -313,3 +334,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
