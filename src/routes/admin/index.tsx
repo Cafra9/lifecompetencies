@@ -46,11 +46,11 @@ function CompsAdmin() {
     queryFn: async () => (await supabase.from("competencies").select("*, skills(*)").order("ordem")).data ?? [],
   });
 
-  async function saveSkill(id: string, patch: Record<string, unknown>) {
+  async function saveSkill(id: string, patch: { nome: string; descricao: string }) {
     const { error } = await supabase.from("skills").update(patch).eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Habilidade atualizada"); qc.invalidateQueries({ queryKey: ["admin-comps"] }); }
   }
-  async function saveComp(id: string, patch: Record<string, unknown>) {
+  async function saveComp(id: string, patch: { nome: string; descricao: string }) {
     const { error } = await supabase.from("competencies").update(patch).eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Competência atualizada"); qc.invalidateQueries({ queryKey: ["admin-comps"] }); }
   }
@@ -61,12 +61,12 @@ function CompsAdmin() {
         <Card key={c.id}>
           <CardHeader><CardTitle className="text-base">{c.nome}</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <CompForm comp={c} onSave={(patch) => saveComp(c.id, patch)} />
+            <CompForm comp={c} onSave={(patch: { nome: string; descricao: string }) => saveComp(c.id, patch)} />
             <div className="border-t pt-4">
               <div className="font-medium text-sm mb-2">Habilidades</div>
               <div className="grid gap-2">
                 {c.skills?.sort((a: any, b: any) => a.ordem - b.ordem).map((s: any) => (
-                  <SkillForm key={s.id} skill={s} onSave={(patch) => saveSkill(s.id, patch)} />
+                  <SkillForm key={s.id} skill={s} onSave={(patch: { nome: string; descricao: string }) => saveSkill(s.id, patch)} />
                 ))}
               </div>
             </div>
