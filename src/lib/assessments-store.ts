@@ -30,11 +30,13 @@ function writeAll(data: Record<string, StudentAssessment>) {
 
 export function useStudentAssessment(alunoId: string) {
   const [data, setData] = useState<AssessmentMap>({});
+  const [notes, setNotes] = useState<NotesMap>({});
 
   useEffect(() => {
     const load = () => {
       const all = readAll();
       setData(all[alunoId]?.avaliacoes ?? {});
+      setNotes(all[alunoId]?.observacoes ?? {});
     };
     load();
     window.addEventListener("isp-assessments-updated", load);
@@ -42,15 +44,20 @@ export function useStudentAssessment(alunoId: string) {
   }, [alunoId]);
 
   const save = useCallback(
-    (avaliacoes: AssessmentMap) => {
+    (avaliacoes: AssessmentMap, observacoes: NotesMap = {}) => {
       const all = readAll();
-      all[alunoId] = { alunoId, avaliacoes, atualizadoEm: new Date().toISOString() };
+      all[alunoId] = {
+        alunoId,
+        avaliacoes,
+        observacoes,
+        atualizadoEm: new Date().toISOString(),
+      };
       writeAll(all);
     },
     [alunoId],
   );
 
-  return { data, save };
+  return { data, notes, save };
 }
 
 export function useAllAssessments() {
