@@ -1,10 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { OBJETIVOS_SEMESTRE, BIG5_STATEMENTS, HOME_WELCOME, DESAFIOS_MENSAIS } from "@/lib/iSP-content";
-import { competencyColor } from "@/lib/competencies";
-import { Target, BookOpen, ClipboardCheck, GraduationCap, Trophy } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GraduationCap, TrendingUp, BookOpen, Users, Brain, Globe, Monitor, Target, Heart } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -14,102 +11,149 @@ export const Route = createFileRoute("/")({
   ),
 });
 
-const competencias = [
-  { slug: "interpessoal", nome: "Interpessoal" },
-  { slug: "cognitiva", nome: "Cognitiva" },
-  { slug: "global", nome: "Global" },
-  { slug: "digital", nome: "Digital" },
-  { slug: "autolideranca", nome: "Autoliderança" },
+const stats = [
+  { label: "Alunos", value: 8, icon: GraduationCap, color: "text-blue-600" },
+  { label: "Avaliações", value: 4, icon: TrendingUp, color: "text-emerald-600" },
+  { label: "Recursos", value: 6, icon: BookOpen, color: "text-purple-600" },
+  { label: "Práticas Compartilhadas", value: 3, icon: Users, color: "text-rose-600" },
+];
+
+const areas = [
+  {
+    nome: "Cognitivo", icon: Brain, count: 3,
+    items: ["Pensamento Crítico", "Resolução de Problemas", "Criatividade e Inovação"],
+    bg: "bg-[oklch(0.95_0.04_300)]", text: "text-[oklch(0.45_0.18_300)]",
+  },
+  {
+    nome: "Global", icon: Globe, count: 3,
+    items: ["Consciência Cultural", "Cidadania Global", "Sustentabilidade"],
+    bg: "bg-[oklch(0.95_0.04_250)]", text: "text-[oklch(0.45_0.18_250)]",
+  },
+  {
+    nome: "Digital", icon: Monitor, count: 3,
+    items: ["Literacia Digital", "Pensamento Computacional", "Criação de Conteúdo Digital"],
+    bg: "bg-[oklch(0.95_0.04_200)]", text: "text-[oklch(0.45_0.15_200)]",
+  },
+  {
+    nome: "Autoliderança", icon: Target, count: 3,
+    items: ["Autoconhecimento", "Autorregulação", "Resiliência"],
+    bg: "bg-[oklch(0.96_0.05_65)]", text: "text-[oklch(0.55_0.17_55)]",
+  },
+  {
+    nome: "Interpessoal", icon: Heart, count: 3,
+    items: ["Comunicação", "Colaboração", "Empatia"],
+    bg: "bg-[oklch(0.95_0.04_25)]", text: "text-[oklch(0.5_0.2_25)]",
+  },
+];
+
+const avaliacoesRecentes = [
+  { aluno: "João Pedro", area: "Pensamento Crítico", nivel: "Mastering", quando: "Há 2 dias" },
+  { aluno: "Maria Eduarda", area: "Colaboração", nivel: "Developing", quando: "Há 3 dias" },
+  { aluno: "Lucas Almeida", area: "Literacia Digital", nivel: "Mastering", quando: "Há 5 dias" },
 ];
 
 function Dashboard() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <p className="text-sm font-medium text-primary uppercase tracking-wide">Aubrick · ISP Life Competencies</p>
-        <h1 className="text-3xl font-bold tracking-tight mt-1">{HOME_WELCOME.titulo}</h1>
-        <p className="text-muted-foreground mt-2 max-w-3xl">{HOME_WELCOME.texto}</p>
+        <h1 className="text-3xl font-bold tracking-tight">Bem-vindo, Ana Silva!</h1>
+        <p className="text-muted-foreground mt-1">Acompanhe o desenvolvimento das competências e apoie sua equipe docente</p>
       </div>
 
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <Target className="h-5 w-5 text-primary" />
-          <h2 className="text-xl font-semibold">Objetivos do 1º Semestre</h2>
-        </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          {OBJETIVOS_SEMESTRE.map((o) => (
-            <Card key={o.n}>
-              <CardHeader>
-                <div className="text-3xl font-bold text-primary">{o.n}</div>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">{o.texto}</CardContent>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s) => {
+          const Icon = s.icon;
+          return (
+            <Card key={s.label}>
+              <CardContent className="p-5 flex items-start justify-between">
+                <div>
+                  <div className="text-sm text-muted-foreground">{s.label}</div>
+                  <div className="text-3xl font-bold mt-2">{s.value}</div>
+                </div>
+                <Icon className={`h-6 w-6 ${s.color}`} />
+              </CardContent>
             </Card>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <div className="flex items-end justify-between mb-3">
-          <div>
-            <h2 className="text-xl font-semibold">ISP Big 5 — Competências para a Vida</h2>
-            <p className="text-sm text-muted-foreground">Cinco competências, quinze habilidades.</p>
-          </div>
-          <Button asChild variant="outline" size="sm"><Link to="/formacao">Ver trilhas</Link></Button>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {competencias.map((c) => {
-            const col = competencyColor(c.slug);
-            return (
-              <Card key={c.slug} className="overflow-hidden h-full">
-                <div className={`h-1.5 ${col.bg}`} />
-                <CardHeader>
-                  <CardTitle className="text-base">{c.nome}</CardTitle>
-                  <CardDescription className="text-xs italic">"{BIG5_STATEMENTS[c.slug]}"</CardDescription>
-                </CardHeader>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <QuickCard icon={GraduationCap} title="Formação" desc="Trilhas e estratégias pedagógicas" to="/formacao" />
-        <QuickCard icon={BookOpen} title="Biblioteca" desc="Framework, rubricas e recursos" to="/biblioteca" />
-        <QuickCard icon={ClipboardCheck} title="Planos de Aula" desc="Repositório colaborativo" to="/planos" />
-      </section>
+          );
+        })}
+      </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2"><Trophy className="h-5 w-5 text-primary" /><CardTitle className="text-base">Desafios pedagógicos do semestre</CardTitle></div>
+          <CardTitle className="text-base">Áreas de Competências</CardTitle>
+          <p className="text-sm text-muted-foreground">5 áreas principais com 15 competências do programa ISP Life Competencies</p>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {DESAFIOS_MENSAIS.map((d) => (
-              <div key={d.mes} className="rounded-lg border p-3">
-                <div className="text-xs text-primary font-medium uppercase">{d.mes}</div>
-                <div className="font-medium mt-1">{d.titulo}</div>
-                <div className="text-xs text-muted-foreground mt-1">{d.desc}</div>
-              </div>
-            ))}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {areas.map((a) => {
+              const Icon = a.icon;
+              return (
+                <div key={a.nome} className={`${a.bg} rounded-xl p-5`}>
+                  <div className={`flex items-center gap-2 font-semibold ${a.text}`}>
+                    <Icon className="h-5 w-5" />
+                    {a.nome}
+                  </div>
+                  <div className={`text-xs ${a.text} opacity-80 mt-1`}>{a.count} competências</div>
+                  <ul className={`mt-3 space-y-1 text-sm ${a.text}`}>
+                    {a.items.map((i) => (
+                      <li key={i}>• {i}</li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
+
+      <div className="grid lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader><CardTitle className="text-base">Avaliações Recentes</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {avaliacoesRecentes.map((a, i) => (
+              <div key={i} className="flex items-center justify-between border-b last:border-0 pb-3 last:pb-0">
+                <div>
+                  <div className="font-medium text-sm">{a.aluno}</div>
+                  <div className="text-xs text-muted-foreground">{a.area}</div>
+                </div>
+                <div className="text-right">
+                  <div className={`text-sm font-medium ${a.nivel === "Mastering" ? "text-emerald-600" : "text-blue-600"}`}>{a.nivel}</div>
+                  <div className="text-xs text-muted-foreground">{a.quando}</div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle className="text-base">Ações Rápidas</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-2 gap-3">
+            <button className="rounded-lg border p-4 text-left hover:bg-muted transition">
+              <ClipQuick icon={ClipboardCheckIcon} title="Nova Avaliação" desc="Registrar progresso" />
+            </button>
+            <button className="rounded-lg border p-4 text-left hover:bg-muted transition">
+              <ClipQuick icon={BookOpen} title="Biblioteca" desc="Acessar recursos" />
+            </button>
+            <button className="rounded-lg border p-4 text-left hover:bg-muted transition">
+              <ClipQuick icon={Users} title="Práticas" desc="Compartilhar com a equipe" />
+            </button>
+            <button className="rounded-lg border p-4 text-left hover:bg-muted transition">
+              <ClipQuick icon={TrendingUp} title="Relatórios" desc="Ver evolução" />
+            </button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
 
-function QuickCard({ icon: Icon, title, desc, to }: { icon: any; title: string; desc: string; to: string }) {
+import { ClipboardCheck as ClipboardCheckIcon } from "lucide-react";
+function ClipQuick({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) {
   return (
-    <Link to={to}>
-      <Card className="h-full transition hover:shadow-md hover:border-primary/40">
-        <CardContent className="pt-6 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><Icon className="h-5 w-5" /></div>
-          <div>
-            <div className="font-medium">{title}</div>
-            <div className="text-xs text-muted-foreground">{desc}</div>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+    <div className="flex items-start gap-3">
+      <Icon className="h-5 w-5 text-primary mt-0.5" />
+      <div>
+        <div className="font-medium text-sm">{title}</div>
+        <div className="text-xs text-muted-foreground">{desc}</div>
+      </div>
+    </div>
   );
 }
