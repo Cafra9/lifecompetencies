@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { jsPDF } from "jspdf";
 import {
   Dialog,
   DialogContent,
@@ -18,18 +19,16 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { Sparkles, Copy, Download, Check, Loader2, RotateCcw } from "lucide-react";
+import { Sparkles, Download, Check, Loader2, RotateCcw, Pencil, Eye } from "lucide-react";
 import {
   RUBRICA_INFANTIL,
   NIVEL_LABEL,
   type Nivel,
 } from "@/lib/rubrica-infantil";
-import {
-  useStudentAssessment,
-  type AssessmentMap,
-  type NotesMap,
-} from "@/lib/assessments-store";
+import { useStudentAssessment, type AssessmentMap } from "@/lib/assessments-store";
 import { gerarRelatorioAluno } from "@/lib/report.functions";
+import { useAuth } from "@/hooks/useAuth";
+import ispLogo from "@/assets/isp-logo.png";
 
 const NIVEIS: Nivel[] = ["iniciando", "desenvolvendo", "dominando"];
 
@@ -69,14 +68,14 @@ export function AvaliarDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data, notes, save } = useStudentAssessment(alunoId);
+  const { data, observacao, save } = useStudentAssessment(alunoId);
   const [local, setLocal] = useState<AssessmentMap>(data);
-  const [localNotes, setLocalNotes] = useState<NotesMap>(notes);
+  const [localObs, setLocalObs] = useState<string>(observacao);
 
   useEffect(() => {
     if (open) {
       setLocal(data);
-      setLocalNotes(notes);
+      setLocalObs(observacao);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -95,19 +94,8 @@ export function AvaliarDialog({
     });
   }
 
-  function setNota(comp: string, hab: string, value: string) {
-    setLocalNotes((prev) => {
-      const k = key(comp, hab);
-      if (!value.trim()) {
-        const { [k]: _, ...rest } = prev;
-        return rest;
-      }
-      return { ...prev, [k]: value };
-    });
-  }
-
   function handleSave() {
-    save(local, localNotes);
+    save(local, localObs);
     toast.success(`Avaliação salva (${Object.keys(local).length}/${total} habilidades)`);
     onOpenChange(false);
   }
@@ -118,20 +106,20 @@ export function AvaliarDialog({
         <DialogHeader className="shrink-0">
           <DialogTitle>Avaliar {alunoNome}</DialogTitle>
           <DialogDescription>
-            Rubrica Educação Infantil (4-7 anos) · Expanda cada habilidade para ver a rubrica completa e registrar observações.
+            Rubrica Educação Infantil (4-7 anos) · Expanda cada habilidade para ver a rubrica completa.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex shrink-0 items-center gap-2 text-sm">
           <Badge variant="secondary">{preenchidos}/{total} habilidades</Badge>
-          {(preenchidos > 0 || Object.keys(localNotes).length > 0) && (
+          {(preenchidos > 0 || localObs.trim()) && (
             <Button
               variant="ghost"
               size="sm"
               className="h-7 gap-1"
               onClick={() => {
                 setLocal({});
-                setLocalNotes({});
+                setLocalObs("");
               }}
             >
               <RotateCcw className="h-3 w-3" /> Limpar tudo
@@ -148,7 +136,6 @@ export function AvaliarDialog({
                   {c.habilidades.map((h) => {
                     const k = key(c.competencia, h.habilidade);
                     const cur = local[k];
-                    const nota = localNotes[k] ?? "";
                     return (
                       <AccordionItem
                         key={h.habilidade}
@@ -165,11 +152,6 @@ export function AvaliarDialog({
                               {cur && (
                                 <Badge variant="outline" className="ml-1 text-[10px] uppercase">
                                   {NIVEL_LABEL[cur]}
-                                </Badge>
-                              )}
-                              {nota.trim() && (
-                                <Badge variant="secondary" className="text-[10px]">
-                                  obs
                                 </Badge>
                               )}
                             </div>
@@ -208,18 +190,6 @@ export function AvaliarDialog({
                               );
                             })}
                           </div>
-
-                          <div className="mt-3">
-                            <label className="text-xs font-medium text-muted-foreground">
-                              Observação do professor (opcional)
-                            </label>
-                            <Textarea
-                              value={nota}
-                              onChange={(e) => setNota(c.competencia, h.habilidade, e.target.value)}
-                              placeholder="Anote evidências, contexto ou recomendações específicas para esta habilidade."
-                              className="mt-1 min-h-[60px] text-sm"
-                            />
-                          </div>
                         </AccordionContent>
                       </AccordionItem>
                     );
@@ -227,6 +197,25 @@ export function AvaliarDialog({
                 </Accordion>
               </div>
             ))}
+
+            <div className="pt-2">
+              <label className="text-sm font-semibold text-foreground">
+                Observações do professor sobre o aluno
+              </label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Este texto será incorporado ao relatório gerado por IA.
+              </p>
+              <Textarea
+                value={localObs}
+                onChange={(e) => setLocalObs(e.target.value)}
+                placeholder="Registre observações gerais sobre o desenvolvimento, comportamento, evidências em sala e recomendações para este aluno."
+                className="min-h-[140px] text-sm"
+                maxLength={4000}
+              />
+              <div className="text-[11px] text-muted-foreground mt-1 text-right">
+                {localObs.length}/4000
+              </div>
+            </div>
           </div>
         </div>
 
@@ -241,6 +230,115 @@ export function AvaliarDialog({
   );
 }
 
+// ---------------- Relatório ----------------
+
+const ISP_NAVY: [number, number, number] = [30, 58, 95];
+
+function downloadPDF({
+  texto,
+  alunoNome,
+  professorNome,
+  segmentoLabel,
+}: {
+  texto: string;
+  alunoNome: string;
+  professorNome: string;
+  segmentoLabel: string;
+}) {
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginX = 56;
+  const marginTop = 56;
+  const marginBottom = 60;
+
+  // Cabeçalho
+  try {
+    doc.addImage(ispLogo, "PNG", marginX, marginTop - 8, 48, 48);
+  } catch {
+    // ignore se falhar
+  }
+
+  doc.setFont("helvetica", "bold"); // Arial-equivalente no jsPDF
+  doc.setFontSize(16);
+  doc.setTextColor(...ISP_NAVY);
+  doc.text("Relatório Pedagógico", marginX + 60, marginTop + 8);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(90, 90, 90);
+  doc.text("iSP Life Competencies", marginX + 60, marginTop + 24);
+
+  // Linha
+  doc.setDrawColor(...ISP_NAVY);
+  doc.setLineWidth(1);
+  doc.line(marginX, marginTop + 48, pageW - marginX, marginTop + 48);
+
+  // Bloco de identificação
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(20, 20, 20);
+  const idY = marginTop + 70;
+  doc.setFont("helvetica", "bold");
+  doc.text("Aluno:", marginX, idY);
+  doc.setFont("helvetica", "normal");
+  doc.text(alunoNome, marginX + 42, idY);
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Professor(a):", marginX, idY + 16);
+  doc.setFont("helvetica", "normal");
+  doc.text(professorNome, marginX + 72, idY + 16);
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Segmento:", marginX, idY + 32);
+  doc.setFont("helvetica", "normal");
+  doc.text(segmentoLabel, marginX + 64, idY + 32);
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Emitido em:", marginX, idY + 48);
+  doc.setFont("helvetica", "normal");
+  doc.text(new Date().toLocaleDateString("pt-BR"), marginX + 70, idY + 48);
+
+  // Corpo
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(20, 20, 20);
+  const bodyStartY = idY + 78;
+  const maxWidth = pageW - marginX * 2;
+  const lineHeight = 15;
+
+  const paragraphs = texto.split(/\n\s*\n/).map((p) => p.replace(/\s+\n/g, "\n").trim()).filter(Boolean);
+  let y = bodyStartY;
+  for (const p of paragraphs) {
+    const lines = doc.splitTextToSize(p, maxWidth) as string[];
+    for (const line of lines) {
+      if (y > pageH - marginBottom) {
+        doc.addPage();
+        y = marginTop;
+      }
+      doc.text(line, marginX, y);
+      y += lineHeight;
+    }
+    y += lineHeight * 0.5;
+  }
+
+  // Rodapé numeração
+  const pageCount = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(9);
+    doc.setTextColor(130, 130, 130);
+    doc.text(
+      `iSP Life Competencies · Relatório de ${alunoNome}`,
+      marginX,
+      pageH - 28,
+    );
+    doc.text(`${i}/${pageCount}`, pageW - marginX, pageH - 28, { align: "right" });
+  }
+
+  doc.save(`relatorio-${alunoNome.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+}
+
 export function RelatorioDialog({
   open,
   onOpenChange,
@@ -252,41 +350,43 @@ export function RelatorioDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data, notes } = useStudentAssessment(alunoId);
+  const { data, observacao } = useStudentAssessment(alunoId);
+  const { user } = useAuth();
+  const professorNome =
+    (user?.user_metadata as any)?.full_name || user?.email || "Professor(a)";
+  const segmentoLabel = "Educação Infantil (4-7 anos)";
+
   const [texto, setTexto] = useState("");
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
   const gerar = useServerFn(gerarRelatorioAluno);
 
-  async function handleGerar() {
-    const avaliacoes = Object.entries(data).map(([k, nivel]) => {
-      const [competencia, habilidade] = k.split("::");
-      const observacao = notes[k]?.trim();
-      return observacao
-        ? { competencia, habilidade, nivel, observacao }
-        : { competencia, habilidade, nivel };
-    });
+  const avaliacoes = Object.entries(data).map(([k, nivel]) => {
+    const [competencia, habilidade] = k.split("::");
+    return { competencia, habilidade, nivel };
+  });
 
+  async function handleGerarCompleto() {
     if (avaliacoes.length === 0) {
       toast.error("Nenhuma avaliação registrada para este aluno.");
       return;
     }
-
     setLoading(true);
-    setTexto("");
     try {
       const res = await gerar({
         data: {
+          mode: "full",
           alunoNome,
-          segmentoLabel: "Educação Infantil (4-7 anos)",
+          professorNome,
+          segmentoLabel,
+          observacaoProfessor: observacao,
           avaliacoes,
         },
       });
-      if (res.error) {
-        toast.error(res.error);
-      } else {
-        setTexto(res.texto);
-      }
+      if (res.error) toast.error(res.error);
+      else setTexto(res.texto);
     } catch (e) {
       console.error(e);
       toast.error("Erro ao gerar relatório.");
@@ -295,71 +395,144 @@ export function RelatorioDialog({
     }
   }
 
-  function handleCopy() {
-    navigator.clipboard.writeText(texto);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  async function handleRegerarSelecao() {
+    const sel = selection;
+    if (!sel || sel.start === sel.end) {
+      // sem seleção: regera tudo
+      await handleGerarCompleto();
+      return;
+    }
+    const trecho = texto.slice(sel.start, sel.end).trim();
+    if (!trecho) {
+      await handleGerarCompleto();
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await gerar({
+        data: {
+          mode: "rewrite",
+          alunoNome,
+          trecho,
+          contexto: texto,
+        },
+      });
+      if (res.error) {
+        toast.error(res.error);
+        return;
+      }
+      const novo = texto.slice(0, sel.start) + res.texto + texto.slice(sel.end);
+      setTexto(novo);
+      // ajustar seleção para cobrir o novo trecho
+      const newEnd = sel.start + res.texto.length;
+      setSelection({ start: sel.start, end: newEnd });
+      requestAnimationFrame(() => {
+        if (taRef.current) {
+          taRef.current.focus();
+          taRef.current.setSelectionRange(sel.start, newEnd);
+        }
+      });
+      toast.success("Trecho regenerado.");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao regenerar trecho.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleDownload() {
-    const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `relatorio-${alunoNome.replace(/\s+/g, "-").toLowerCase()}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (!texto.trim()) {
+      toast.error("Gere o relatório antes de baixar.");
+      return;
+    }
+    downloadPDF({ texto, alunoNome, professorNome, segmentoLabel });
   }
 
   // Gera automaticamente ao abrir
   useEffect(() => {
     if (open) {
       setTexto("");
-      handleGerar();
+      setSelection(null);
+      setEditing(false);
+      handleGerarCompleto();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, alunoId]);
 
+  function captureSelection() {
+    const el = taRef.current;
+    if (!el) return;
+    setSelection({ start: el.selectionStart, end: el.selectionEnd });
+  }
+
+  const trechoLen = selection ? selection.end - selection.start : 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[92vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
             Relatório · {alunoNome}
           </DialogTitle>
           <DialogDescription>
-            Gerado por IA com base nas avaliações e observações registradas.
+            Gerado por IA com base nas avaliações e nas observações do(a) professor(a). Selecione um trecho e clique em <strong>Regerar</strong> para reescrever apenas a seleção.
           </DialogDescription>
         </DialogHeader>
 
-        {loading ? (
+        {loading && !texto ? (
           <div className="flex-1 flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
             <Loader2 className="h-6 w-6 animate-spin" />
             <span className="text-sm">Gerando relatório...</span>
           </div>
         ) : (
-          <Textarea
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            className="flex-1 min-h-[300px] font-serif text-sm leading-relaxed"
-            placeholder="O relatório aparecerá aqui."
-          />
+          <div className="flex-1 flex flex-col min-h-0 gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs text-muted-foreground">
+                {trechoLen > 0
+                  ? `${trechoLen} caractere(s) selecionados — "Regerar" reescreverá apenas a seleção.`
+                  : "Nenhuma seleção — \"Regerar\" reescreverá o relatório inteiro."}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditing((v) => !v)}
+                className="gap-1.5 h-7"
+              >
+                {editing ? <Eye className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
+                {editing ? "Visualizar" : "Editar texto"}
+              </Button>
+            </div>
+            <Textarea
+              ref={taRef}
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              onSelect={captureSelection}
+              onKeyUp={captureSelection}
+              onMouseUp={captureSelection}
+              readOnly={!editing}
+              className="flex-1 min-h-[320px] font-sans text-[13px] leading-relaxed"
+              placeholder="O relatório aparecerá aqui."
+              style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
+            />
+          </div>
         )}
 
         <DialogFooter className="flex-row justify-between sm:justify-between">
-          <Button variant="outline" size="sm" onClick={handleGerar} disabled={loading} className="gap-2">
-            <Sparkles className="h-4 w-4" /> Regerar
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRegerarSelecao}
+            disabled={loading || !texto}
+            className="gap-2"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {trechoLen > 0 ? "Regerar seleção" : "Regerar"}
           </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleCopy} disabled={!texto} className="gap-2">
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? "Copiado" : "Copiar"}
-            </Button>
-            <Button size="sm" onClick={handleDownload} disabled={!texto} className="gap-2">
-              <Download className="h-4 w-4" /> Baixar .txt
-            </Button>
-          </div>
+          <Button size="sm" onClick={handleDownload} disabled={!texto} className="gap-2">
+            <Download className="h-4 w-4" /> Baixar PDF
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
