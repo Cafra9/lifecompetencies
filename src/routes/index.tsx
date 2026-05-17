@@ -27,8 +27,8 @@ function Dashboard() {
     <div className="space-y-8">
       <div>
         <p className="text-sm font-medium text-primary uppercase tracking-wide">Aubrick · ISP Life Competencies</p>
-        <h1 className="text-3xl font-bold tracking-tight mt-1">Mentes curiosas e confiantes</h1>
-        <p className="text-muted-foreground mt-1">Plataforma de formação docente, planejamento e avaliação por competências.</p>
+        <h1 className="text-3xl font-bold tracking-tight mt-1">{HOME_WELCOME.titulo}</h1>
+        <p className="text-muted-foreground mt-2 max-w-3xl">{HOME_WELCOME.texto}</p>
       </div>
 
       <section>
