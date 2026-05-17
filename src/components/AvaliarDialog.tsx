@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { toast } from "sonner";
 import { Sparkles, Copy, Download, Check, Loader2, RotateCcw } from "lucide-react";
 import {
@@ -80,15 +80,15 @@ export function AvaliarDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl h-[90dvh] max-h-[90dvh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Avaliar {alunoNome}</DialogTitle>
           <DialogDescription>
             Rubrica Educação Infantil (4-7 anos) · Toque no nível para cada habilidade. Toque de novo para limpar.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex shrink-0 items-center gap-2 text-sm">
           <Badge variant="secondary">{preenchidos}/{total} habilidades</Badge>
           {preenchidos > 0 && (
             <Button variant="ghost" size="sm" className="h-7 gap-1" onClick={() => setLocal({})}>
@@ -97,7 +97,7 @@ export function AvaliarDialog({
           )}
         </div>
 
-        <ScrollArea className="flex-1 min-h-0 pr-3 -mr-3">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-3 -mr-3">
           <div className="space-y-5">
             {RUBRICA_INFANTIL.map((c) => (
               <div key={c.slug}>
@@ -114,15 +114,30 @@ export function AvaliarDialog({
                         <div className="text-sm font-medium">{h.habilidade}</div>
                         <div className="flex gap-1">
                           {NIVEIS.map((n) => (
-                            <button
-                              key={n}
-                              type="button"
-                              data-selected={cur === n}
-                              onClick={() => set(c.competencia, h.habilidade, n)}
-                              className={`text-xs px-3 py-1.5 rounded-md border transition-colors hover:bg-muted ${NIVEL_BTN[n]}`}
-                            >
-                              {NIVEL_LABEL[n]}
-                            </button>
+                            <HoverCard key={n} openDelay={120} closeDelay={80}>
+                              <HoverCardTrigger asChild>
+                                <button
+                                  type="button"
+                                  data-selected={cur === n}
+                                  onClick={() => set(c.competencia, h.habilidade, n)}
+                                  className={`text-xs px-3 py-1.5 rounded-md border transition-colors hover:bg-muted ${NIVEL_BTN[n]}`}
+                                >
+                                  {NIVEL_LABEL[n]}
+                                </button>
+                              </HoverCardTrigger>
+                              <HoverCardContent side="top" align="end" className="w-80 space-y-3 text-sm">
+                                <div>
+                                  <div className="text-xs font-semibold uppercase text-muted-foreground">{c.competencia} · {h.habilidade}</div>
+                                  <div className="mt-1 font-semibold text-foreground">{NIVEL_LABEL[n]}</div>
+                                </div>
+                                <p className="leading-relaxed text-muted-foreground">{h.descritores[n]}</p>
+                                <ul className="list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
+                                  {h.exemplos[n].map((exemplo) => (
+                                    <li key={exemplo}>{exemplo}</li>
+                                  ))}
+                                </ul>
+                              </HoverCardContent>
+                            </HoverCard>
                           ))}
                         </div>
                       </div>
@@ -132,9 +147,9 @@ export function AvaliarDialog({
               </div>
             ))}
           </div>
-        </ScrollArea>
+        </div>
 
-        <DialogFooter>
+        <DialogFooter className="shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSave}>Salvar avaliação</Button>
         </DialogFooter>
