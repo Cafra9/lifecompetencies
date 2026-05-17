@@ -3,8 +3,8 @@ import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { competencyColor } from "@/lib/competencies";
-import { BIG5_STATEMENTS, ESTRATEGIAS_PEDAGOGICAS, LEARNING_FIRST_DESIGN } from "@/lib/iSP-content";
-import { Lightbulb, Workflow } from "lucide-react";
+import { BIG5_STATEMENTS, ESTRATEGIAS_PEDAGOGICAS, LEARNING_FIRST_DESIGN, ESTRUTURA_TRILHA } from "@/lib/iSP-content";
+import { Lightbulb, Workflow, ListChecks } from "lucide-react";
 
 export const Route = createFileRoute("/formacao/")({
   component: () => (
