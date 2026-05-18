@@ -33,6 +33,12 @@ import { corDaCompetencia } from "@/lib/competencia-cores";
 
 const NIVEIS: Nivel[] = ["iniciando", "desenvolvendo", "dominando"];
 
+const NIVEL_CELL: Record<Nivel, string> = {
+  iniciando: "bg-green-200 text-green-900",
+  desenvolvendo: "bg-green-500 text-white",
+  dominando: "bg-green-700 text-white",
+};
+
 function key(comp: string, hab: string) {
   return `${comp}::${hab}`;
 }
@@ -190,7 +196,7 @@ export function AvaliarDialog({
                                   onClick={() => setNivel(c.competencia, h.habilidade, n, c.slug)}
                                   className={`text-left rounded-md border p-3 transition-colors hover:brightness-95 ${
                                     selected
-                                      ? `${cor.cell[n]} border-transparent ring-2 ring-offset-1 ring-foreground/20`
+                                      ? `${NIVEL_CELL[n]} border-transparent ring-2 ring-offset-1 ring-foreground/20`
                                       : "bg-card border-border"
                                   }`}
                                 >
