@@ -305,7 +305,7 @@ function downloadPDF({
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(...ISP_NAVY);
-  doc.text("Relatório Pedagógico", pageW / 2, marginTop + 48, { align: "center" });
+  doc.text("Relatório de Desenvolvimento de Competências para a Vida", pageW / 2, marginTop + 48, { align: "center" });
 
   // Linha
   doc.setDrawColor(...ISP_NAVY);
