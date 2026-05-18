@@ -7,20 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { RUBRICA_INFANTIL, NIVEL_LABEL, type Nivel } from "@/lib/rubrica-infantil";
 import { useAllAssessments } from "@/lib/assessments-store";
-
-const HEAT_CELL: Record<Nivel | "vazio", string> = {
-  iniciando: "bg-green-200 text-green-900",
-  desenvolvendo: "bg-green-500 text-white",
-  dominando: "bg-green-700 text-white",
-  vazio: "bg-muted text-muted-foreground",
-};
-
-const LEGEND: { nivel: Nivel | "vazio"; label: string }[] = [
-  { nivel: "iniciando", label: NIVEL_LABEL.iniciando },
-  { nivel: "desenvolvendo", label: NIVEL_LABEL.desenvolvendo },
-  { nivel: "dominando", label: NIVEL_LABEL.dominando },
-  { nivel: "vazio", label: "Não avaliado" },
-];
+import { COMPETENCIA_CORES, corDaCompetencia, VAZIO_CELL } from "@/lib/competencia-cores";
 
 export function ClassHeatmapDialog({
   open,
