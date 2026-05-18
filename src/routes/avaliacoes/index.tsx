@@ -128,6 +128,12 @@ function AvaliacoesPage() {
           alunoNome={ativo(heatmapId)!.nome}
         />
       )}
+
+      <ClassHeatmapDialog
+        open={classHeatmap}
+        onOpenChange={setClassHeatmap}
+        alunos={alunos}
+      />
     </div>
   );
 }
