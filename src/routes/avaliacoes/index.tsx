@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,15 @@ const alunos = [
 ];
 
 function AvaliacoesPage() {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="py-16 text-center text-sm text-muted-foreground">Carregando…</div>
+    );
+  }
+  if (!user) {
+    return <Navigate to="/login" search={{ redirect: "/avaliacoes" }} replace />;
+  }
   const [busca, setBusca] = useState("");
   const [avaliarId, setAvaliarId] = useState<string | null>(null);
   const [relatorioId, setRelatorioId] = useState<string | null>(null);
