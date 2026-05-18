@@ -46,6 +46,13 @@ function AvaliacoesPage() {
   const [heatmapId, setHeatmapId] = useState<string | null>(null);
   const [classHeatmap, setClassHeatmap] = useState(false);
 
+  if (loading) {
+    return <div className="py-16 text-center text-sm text-muted-foreground">Carregando…</div>;
+  }
+  if (!user) {
+    return <Navigate to="/login" search={{ redirect: "/avaliacoes" }} replace />;
+  }
+
   const filtrados = alunos.filter(
     (a) =>
       a.nome.toLowerCase().includes(busca.toLowerCase()) ||
