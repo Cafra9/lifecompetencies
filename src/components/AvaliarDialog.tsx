@@ -176,7 +176,7 @@ export function AvaliarDialog({
                               />
                               <span className="text-sm font-medium">{h.habilidade}</span>
                               {cur && (
-                                <Badge variant="outline" className={`ml-1 text-[10px] uppercase ${cor.badge}`}>
+                                <Badge variant="outline" className={`ml-1 text-[10px] uppercase border-transparent ${cor.cell[cur]}`}>
                                   {NIVEL_LABEL[cur]}
                                 </Badge>
                               )}
