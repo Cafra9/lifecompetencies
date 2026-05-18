@@ -33,6 +33,12 @@ import { corDaCompetencia } from "@/lib/competencia-cores";
 
 const NIVEIS: Nivel[] = ["iniciando", "desenvolvendo", "dominando"];
 
+const NIVEL_CELL: Record<Nivel, string> = {
+  iniciando: "bg-green-200 text-green-900",
+  desenvolvendo: "bg-green-500 text-white",
+  dominando: "bg-green-700 text-white",
+};
+
 function key(comp: string, hab: string) {
   return `${comp}::${hab}`;
 }
