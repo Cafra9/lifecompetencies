@@ -56,7 +56,7 @@ function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Bem-vindo, Ana Silva!</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Bem-vinda, Lisandra!</h1>
         <p className="text-muted-foreground mt-1">Acompanhe o desenvolvimento das competências e apoie sua equipe docente</p>
       </div>
 

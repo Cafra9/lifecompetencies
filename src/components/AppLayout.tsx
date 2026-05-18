@@ -45,7 +45,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <div className="text-right leading-tight">
               <div className="text-sm font-medium">Lisandra</div>
-              <div className="text-xs text-muted-foreground">Coordenador</div>
+              <div className="text-xs text-muted-foreground">Professora</div>
             </div>
             <button className="text-muted-foreground hover:text-foreground transition" aria-label="Sair">
               <LogOut className="h-4 w-4" />
