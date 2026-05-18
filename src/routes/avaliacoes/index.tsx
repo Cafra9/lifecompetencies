@@ -62,6 +62,7 @@ function AvaliacoesPage() {
   const ativo = (id: string | null) => alunos.find((a) => a.id === id);
 
   return (
+    <AppLayout>
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -144,6 +145,7 @@ function AvaliacoesPage() {
         alunos={alunos}
       />
     </div>
+    </AppLayout>
   );
 }
 
