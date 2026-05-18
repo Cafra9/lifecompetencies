@@ -204,9 +204,9 @@ function AlunoCard({
 
         <div className="space-y-2 text-sm">
           <Row label="Habilidades avaliadas" value={<Badge variant="secondary">{c.total}/15</Badge>} />
-          <Row label={<span className="text-red-700">Dominando</span>} value={c.dominando} />
-          <Row label={<span className="text-red-500">Desenvolvendo</span>} value={c.desenvolvendo} />
-          <Row label={<span className="text-red-300">Iniciando</span>} value={c.iniciando} />
+          <Row label={<span className="text-green-700">Dominando</span>} value={c.dominando} />
+          <Row label={<span className="text-green-600">Desenvolvendo</span>} value={c.desenvolvendo} />
+          <Row label={<span className="text-green-500">Iniciando</span>} value={c.iniciando} />
         </div>
 
         <div className="grid grid-cols-2 gap-2">

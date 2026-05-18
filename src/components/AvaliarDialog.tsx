@@ -29,31 +29,9 @@ import { useStudentAssessment, type AssessmentMap } from "@/lib/assessments-stor
 import { gerarRelatorioAluno } from "@/lib/report.functions";
 import { useAuth } from "@/hooks/useAuth";
 import ispLogo from "@/assets/isp-logo.png";
+import { corDaCompetencia } from "@/lib/competencia-cores";
 
 const NIVEIS: Nivel[] = ["iniciando", "desenvolvendo", "dominando"];
-
-// Heatmap em tons de vermelho: iniciando = mais quente (intenso),
-// dominando = mais frio (claro). Padronagem inspirada em heatmaps.
-const NIVEL_BTN: Record<Nivel, string> = {
-  iniciando:
-    "data-[selected=true]:bg-red-200 data-[selected=true]:text-red-900 data-[selected=true]:border-red-300",
-  desenvolvendo:
-    "data-[selected=true]:bg-red-400 data-[selected=true]:text-white data-[selected=true]:border-red-400",
-  dominando:
-    "data-[selected=true]:bg-red-600 data-[selected=true]:text-white data-[selected=true]:border-red-600",
-};
-
-const NIVEL_HEADER: Record<Nivel, string> = {
-  iniciando: "border-red-100 bg-red-50/40",
-  desenvolvendo: "border-red-200 bg-red-50/80",
-  dominando: "border-red-300 bg-red-100/70",
-};
-
-const NIVEL_DOT: Record<Nivel, string> = {
-  iniciando: "bg-red-200",
-  desenvolvendo: "bg-red-400",
-  dominando: "bg-red-600",
-};
 
 function key(comp: string, hab: string) {
   return `${comp}::${hab}`;
@@ -161,9 +139,14 @@ export function AvaliarDialog({
 
         <div className="flex-1 min-h-0 overflow-y-auto pr-3 -mr-3">
           <div className="space-y-5">
-            {RUBRICA_INFANTIL.map((c) => (
+            {RUBRICA_INFANTIL.map((c) => {
+              const cor = corDaCompetencia(c.competencia);
+              return (
               <div key={c.slug}>
-                <div className="text-sm font-semibold text-foreground mb-2">{c.competencia}</div>
+                <div className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <span className={`h-3 w-3 rounded ${cor.swatch}`} />
+                  <span className={cor.text}>{c.competencia}</span>
+                </div>
                 <Accordion
                   type="multiple"
                   className="space-y-2"
@@ -177,17 +160,17 @@ export function AvaliarDialog({
                       <AccordionItem
                         key={h.habilidade}
                         value={k}
-                        className="rounded-md border bg-card data-[state=open]:shadow-sm"
+                        className={`rounded-md border bg-card data-[state=open]:shadow-sm ${cur ? "" : ""}`}
                       >
                         <div className="flex items-center gap-2 pl-3 pr-2 py-1">
                           <AccordionTrigger className="flex-1 py-2 hover:no-underline">
                             <div className="flex items-center gap-2 text-left">
                               <span
-                                className={`h-2 w-2 rounded-full ${cur ? NIVEL_DOT[cur] : "bg-muted-foreground/30"}`}
+                                className={`h-2 w-2 rounded-full ${cur ? cor.swatch : "bg-muted-foreground/30"}`}
                               />
                               <span className="text-sm font-medium">{h.habilidade}</span>
                               {cur && (
-                                <Badge variant="outline" className="ml-1 text-[10px] uppercase">
+                                <Badge variant="outline" className={`ml-1 text-[10px] uppercase ${cor.badge}`}>
                                   {NIVEL_LABEL[cur]}
                                 </Badge>
                               )}
@@ -205,7 +188,11 @@ export function AvaliarDialog({
                                   type="button"
                                   data-selected={selected}
                                   onClick={() => setNivel(c.competencia, h.habilidade, n, c.slug)}
-                                  className={`text-left rounded-md border p-3 transition-colors ${NIVEL_HEADER[n]} hover:brightness-95 ${NIVEL_BTN[n]} ${selected ? "ring-2 ring-offset-1 ring-foreground/20" : ""}`}
+                                  className={`text-left rounded-md border p-3 transition-colors hover:brightness-95 ${
+                                    selected
+                                      ? `${cor.cell[n]} border-transparent ring-2 ring-offset-1 ring-foreground/20`
+                                      : "bg-card border-border"
+                                  }`}
                                 >
                                   <div className="flex items-center justify-between mb-1.5">
                                     <span className="text-xs font-semibold uppercase tracking-wide">
@@ -213,11 +200,11 @@ export function AvaliarDialog({
                                     </span>
                                     {selected && <Check className="h-3.5 w-3.5" />}
                                   </div>
-                                  <p className="text-xs leading-relaxed text-foreground/80">
+                                  <p className={`text-xs leading-relaxed ${selected ? "opacity-95" : "text-foreground/80"}`}>
                                     {h.descritores[n]}
                                   </p>
                                   {h.exemplos[n]?.length > 0 && (
-                                    <ul className="mt-2 list-disc space-y-0.5 pl-4 text-[11px] leading-relaxed text-foreground/70">
+                                    <ul className={`mt-2 list-disc space-y-0.5 pl-4 text-[11px] leading-relaxed ${selected ? "opacity-90" : "text-foreground/70"}`}>
                                       {h.exemplos[n].slice(0, 3).map((ex) => (
                                         <li key={ex}>{ex}</li>
                                       ))}
@@ -233,7 +220,8 @@ export function AvaliarDialog({
                   })}
                 </Accordion>
               </div>
-            ))}
+              );
+            })}
 
             <div className="pt-2">
               <label className="text-sm font-semibold text-foreground">

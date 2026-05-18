@@ -1,5 +1,7 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { BookMarked, LayoutGrid, ClipboardCheck, Library, Users2, LogOut } from "lucide-react";
+import { LayoutGrid, ClipboardCheck, Library, Users2, LogOut } from "lucide-react";
+import frameworkIcon from "@/assets/framework.png";
+import aubrickLogo from "@/assets/aubrick-isp-logo.jpg";
 import type { ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -27,12 +29,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <header className="bg-background border-b sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center gap-8">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
-              <BookMarked className="h-5 w-5" />
-            </div>
-            <div className="leading-tight">
-              <div className="font-bold text-sm">ISP Life Competencies</div>
-              <div className="text-xs text-muted-foreground">Formação Docente</div>
+            <img src={frameworkIcon} alt="Framework ISP" className="h-11 w-11 rounded-full object-cover" />
+            <div className="leading-tight flex items-center gap-3">
+              <img src={aubrickLogo} alt="Aubrick · ISP International Schools Partnership" className="h-7 w-auto" />
             </div>
           </div>
           <nav className="flex-1 flex items-center justify-center gap-1">

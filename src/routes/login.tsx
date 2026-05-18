@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { BookMarked, Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import frameworkIcon from "@/assets/framework.png";
+import aubrickLogo from "@/assets/aubrick-isp-logo.jpg";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -30,11 +32,9 @@ function LoginPage() {
   return (
     <div className="min-h-screen grid place-items-center bg-[oklch(0.98_0.005_250)] px-4">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground mx-auto">
-            <BookMarked className="h-6 w-6" />
-          </div>
-          <h1 className="text-2xl font-bold">ISP Life Competencies</h1>
+        <div className="text-center space-y-3">
+          <img src={frameworkIcon} alt="Framework ISP" className="mx-auto h-20 w-20 rounded-full object-cover" />
+          <img src={aubrickLogo} alt="Aubrick · ISP International Schools Partnership" className="mx-auto h-9 w-auto" />
           <p className="text-sm text-muted-foreground">Entre para acessar suas avaliações</p>
         </div>
 
