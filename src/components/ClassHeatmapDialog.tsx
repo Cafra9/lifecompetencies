@@ -7,7 +7,20 @@ import {
 } from "@/components/ui/dialog";
 import { RUBRICA_INFANTIL, NIVEL_LABEL, type Nivel } from "@/lib/rubrica-infantil";
 import { useAllAssessments } from "@/lib/assessments-store";
-import { COMPETENCIA_CORES, corDaCompetencia, VAZIO_CELL } from "@/lib/competencia-cores";
+
+const HEAT_CELL: Record<Nivel | "vazio", string> = {
+  iniciando: "bg-green-200 text-green-900",
+  desenvolvendo: "bg-green-500 text-white",
+  dominando: "bg-green-700 text-white",
+  vazio: "bg-muted text-muted-foreground",
+};
+
+const LEGEND: { nivel: Nivel | "vazio"; label: string }[] = [
+  { nivel: "iniciando", label: NIVEL_LABEL.iniciando },
+  { nivel: "desenvolvendo", label: NIVEL_LABEL.desenvolvendo },
+  { nivel: "dominando", label: NIVEL_LABEL.dominando },
+  { nivel: "vazio", label: "Não avaliado" },
+];
 
 export function ClassHeatmapDialog({
   open,
@@ -20,7 +33,6 @@ export function ClassHeatmapDialog({
 }) {
   const all = useAllAssessments();
 
-  // achata todas as habilidades em ordem, mantendo agrupamento por competência
   const colunas = RUBRICA_INFANTIL.flatMap((c) =>
     c.habilidades.map((h) => ({
       competencia: c.competencia,
@@ -40,16 +52,12 @@ export function ClassHeatmapDialog({
         </DialogHeader>
 
         <div className="flex flex-wrap gap-3 text-xs">
-          {Object.entries(COMPETENCIA_CORES).map(([nome, cor]) => (
-            <div key={nome} className="flex items-center gap-1.5">
-              <span className={`h-3 w-3 rounded ${cor.swatch}`} />
-              <span>{nome}</span>
+          {LEGEND.map((l) => (
+            <div key={l.nivel} className="flex items-center gap-1.5">
+              <span className={`h-3 w-3 rounded ${HEAT_CELL[l.nivel]}`} />
+              <span>{l.label}</span>
             </div>
           ))}
-          <div className="flex items-center gap-1.5">
-            <span className={`h-3 w-3 rounded ${VAZIO_CELL}`} />
-            <span>Não avaliado</span>
-          </div>
         </div>
 
         <div className="overflow-auto border rounded-md">
@@ -62,18 +70,15 @@ export function ClassHeatmapDialog({
                 >
                   Aluno
                 </th>
-                {RUBRICA_INFANTIL.map((c) => {
-                  const cor = corDaCompetencia(c.competencia);
-                  return (
-                    <th
-                      key={c.slug}
-                      colSpan={c.habilidades.length}
-                      className={`border-b border-r px-2 py-1 text-center font-semibold ${cor.swatch} text-white`}
-                    >
-                      {c.competencia}
-                    </th>
-                  );
-                })}
+                {RUBRICA_INFANTIL.map((c) => (
+                  <th
+                    key={c.slug}
+                    colSpan={c.habilidades.length}
+                    className="border-b border-r px-2 py-1 text-center font-semibold bg-muted/50"
+                  >
+                    {c.competencia}
+                  </th>
+                ))}
               </tr>
               <tr>
                 {colunas.map((col) => (
@@ -107,8 +112,7 @@ export function ClassHeatmapDialog({
                     </td>
                     {colunas.map((col) => {
                       const nivel = av[col.key] as Nivel | undefined;
-                      const cor = corDaCompetencia(col.competencia);
-                      const cls = nivel ? cor.cell[nivel] : VAZIO_CELL;
+                      const cls = HEAT_CELL[nivel ?? "vazio"];
                       return (
                         <td
                           key={col.key}
