@@ -107,7 +107,8 @@ export function ClassHeatmapDialog({
                     </td>
                     {colunas.map((col) => {
                       const nivel = av[col.key] as Nivel | undefined;
-                      const cls = HEAT_CELL[nivel ?? "vazio"];
+                      const cor = corDaCompetencia(col.competencia);
+                      const cls = nivel ? cor.cell[nivel] : VAZIO_CELL;
                       return (
                         <td
                           key={col.key}
