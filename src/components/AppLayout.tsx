@@ -55,10 +55,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </nav>
           <div className="flex items-center gap-3">
             <div className="text-right leading-tight">
-              <div className="text-sm font-medium">Lisandra</div>
+              <div className="text-sm font-medium">{displayName}</div>
               <div className="text-xs text-muted-foreground">Professora</div>
             </div>
-            <button className="text-muted-foreground hover:text-foreground transition" aria-label="Sair">
+            <button
+              onClick={handleSignOut}
+              className="text-muted-foreground hover:text-foreground transition"
+              aria-label="Sair"
+              title="Sair"
+            >
               <LogOut className="h-4 w-4" />
             </button>
           </div>
