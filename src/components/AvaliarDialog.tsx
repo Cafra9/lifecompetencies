@@ -196,7 +196,7 @@ export function AvaliarDialog({
                                   onClick={() => setNivel(c.competencia, h.habilidade, n, c.slug)}
                                   className={`text-left rounded-md border p-3 transition-colors hover:brightness-95 ${
                                     selected
-                                      ? `${cor.cell[n]} border-transparent ring-2 ring-offset-1 ring-foreground/20`
+                                      ? `${NIVEL_CELL[n]} border-transparent ring-2 ring-offset-1 ring-foreground/20`
                                       : "bg-card border-border"
                                   }`}
                                 >
