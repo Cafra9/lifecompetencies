@@ -1,5 +1,7 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { BookMarked, LayoutGrid, ClipboardCheck, Library, Users2, LogOut } from "lucide-react";
+import { LayoutGrid, ClipboardCheck, Library, Users2, LogOut } from "lucide-react";
+import frameworkIcon from "@/assets/framework.png";
+import aubrickLogo from "@/assets/aubrick-isp-logo.jpg";
 import type { ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
