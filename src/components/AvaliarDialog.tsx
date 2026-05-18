@@ -36,23 +36,23 @@ const NIVEIS: Nivel[] = ["iniciando", "desenvolvendo", "dominando"];
 // dominando = mais frio (claro). Padronagem inspirada em heatmaps.
 const NIVEL_BTN: Record<Nivel, string> = {
   iniciando:
-    "data-[selected=true]:bg-red-600 data-[selected=true]:text-white data-[selected=true]:border-red-600",
+    "data-[selected=true]:bg-red-200 data-[selected=true]:text-red-900 data-[selected=true]:border-red-300",
   desenvolvendo:
     "data-[selected=true]:bg-red-400 data-[selected=true]:text-white data-[selected=true]:border-red-400",
   dominando:
-    "data-[selected=true]:bg-red-200 data-[selected=true]:text-red-900 data-[selected=true]:border-red-300",
+    "data-[selected=true]:bg-red-600 data-[selected=true]:text-white data-[selected=true]:border-red-600",
 };
 
 const NIVEL_HEADER: Record<Nivel, string> = {
-  iniciando: "border-red-300 bg-red-100/70",
+  iniciando: "border-red-100 bg-red-50/40",
   desenvolvendo: "border-red-200 bg-red-50/80",
-  dominando: "border-red-100 bg-red-50/40",
+  dominando: "border-red-300 bg-red-100/70",
 };
 
 const NIVEL_DOT: Record<Nivel, string> = {
-  iniciando: "bg-red-600",
+  iniciando: "bg-red-200",
   desenvolvendo: "bg-red-400",
-  dominando: "bg-red-200",
+  dominando: "bg-red-600",
 };
 
 function key(comp: string, hab: string) {
