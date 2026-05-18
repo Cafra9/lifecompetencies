@@ -62,15 +62,18 @@ export function ClassHeatmapDialog({
                 >
                   Aluno
                 </th>
-                {RUBRICA_INFANTIL.map((c) => (
-                  <th
-                    key={c.slug}
-                    colSpan={c.habilidades.length}
-                    className="border-b border-r px-2 py-1 text-center font-semibold bg-muted/50"
-                  >
-                    {c.competencia}
-                  </th>
-                ))}
+                {RUBRICA_INFANTIL.map((c) => {
+                  const cor = corDaCompetencia(c.competencia);
+                  return (
+                    <th
+                      key={c.slug}
+                      colSpan={c.habilidades.length}
+                      className={`border-b border-r px-2 py-1 text-center font-semibold ${cor.swatch} text-white`}
+                    >
+                      {c.competencia}
+                    </th>
+                  );
+                })}
               </tr>
               <tr>
                 {colunas.map((col) => (
