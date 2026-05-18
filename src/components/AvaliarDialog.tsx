@@ -159,9 +159,10 @@ export function AvaliarDialog({
                   value={openItems[c.slug] ?? []}
                   onValueChange={(v) => setOpenItems((prev) => ({ ...prev, [c.slug]: v }))}
                 >
-                  {c.habilidades.map((h) => {
+                  {c.habilidades.map((h, idx) => {
                     const k = key(c.competencia, h.habilidade);
                     const cur = local[k];
+                    const dotOpacity = ["opacity-100", "opacity-80", "opacity-60", "opacity-40", "opacity-25"][idx % 5];
                     return (
                       <AccordionItem
                         key={h.habilidade}
@@ -172,11 +173,11 @@ export function AvaliarDialog({
                           <AccordionTrigger className="flex-1 py-2 hover:no-underline">
                             <div className="flex items-center gap-2 text-left">
                               <span
-                                className={`h-2 w-2 rounded-full ${cur ? cor.swatch : "bg-muted-foreground/30"}`}
+                                className={`h-2.5 w-2.5 rounded-full ${cor.swatch} ${dotOpacity}`}
                               />
                               <span className="text-sm font-medium">{h.habilidade}</span>
                               {cur && (
-                                <Badge variant="outline" className={`ml-1 text-[10px] uppercase border-transparent ${cor.cell[cur]}`}>
+                                <Badge variant="outline" className={`ml-1 text-[10px] uppercase border-transparent ${NIVEL_CELL[cur]}`}>
                                   {NIVEL_LABEL[cur]}
                                 </Badge>
                               )}
