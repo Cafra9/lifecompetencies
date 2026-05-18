@@ -40,12 +40,16 @@ export function ClassHeatmapDialog({
         </DialogHeader>
 
         <div className="flex flex-wrap gap-3 text-xs">
-          {LEGEND.map((l) => (
-            <div key={l.nivel} className="flex items-center gap-1.5">
-              <span className={`h-3 w-3 rounded ${HEAT_CELL[l.nivel]}`} />
-              <span>{l.label}</span>
+          {Object.entries(COMPETENCIA_CORES).map(([nome, cor]) => (
+            <div key={nome} className="flex items-center gap-1.5">
+              <span className={`h-3 w-3 rounded ${cor.swatch}`} />
+              <span>{nome}</span>
             </div>
           ))}
+          <div className="flex items-center gap-1.5">
+            <span className={`h-3 w-3 rounded ${VAZIO_CELL}`} />
+            <span>Não avaliado</span>
+          </div>
         </div>
 
         <div className="overflow-auto border rounded-md">
