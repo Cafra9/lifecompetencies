@@ -1,6 +1,7 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { BookMarked, LayoutGrid, ClipboardCheck, Library, Users2, LogOut } from "lucide-react";
 import type { ReactNode } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutGrid },
@@ -11,6 +12,16 @@ const nav = [
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const displayName =
+    (user?.user_metadata?.nome as string | undefined) ||
+    (user?.user_metadata?.full_name as string | undefined) ||
+    (user?.email ? user.email.split("@")[0] : "Lisandra");
+  const handleSignOut = async () => {
+    await signOut();
+    navigate({ to: "/login" });
+  };
   return (
     <div className="min-h-screen bg-[oklch(0.98_0.005_250)]">
       <header className="bg-background border-b sticky top-0 z-20">
@@ -44,10 +55,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </nav>
           <div className="flex items-center gap-3">
             <div className="text-right leading-tight">
-              <div className="text-sm font-medium">Lisandra</div>
+              <div className="text-sm font-medium">{displayName}</div>
               <div className="text-xs text-muted-foreground">Professora</div>
             </div>
-            <button className="text-muted-foreground hover:text-foreground transition" aria-label="Sair">
+            <button
+              onClick={handleSignOut}
+              className="text-muted-foreground hover:text-foreground transition"
+              aria-label="Sair"
+              title="Sair"
+            >
               <LogOut className="h-4 w-4" />
             </button>
           </div>

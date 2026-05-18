@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TurmasIndexRouteImport } from './routes/turmas/index'
@@ -24,6 +25,11 @@ import { Route as FormacaoSlugRouteImport } from './routes/formacao/$slug'
 import { Route as AvaliacoesRubricaRouteImport } from './routes/avaliacoes/rubrica'
 import { Route as AlunosIdRouteImport } from './routes/alunos/$id'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -98,6 +104,7 @@ const AlunosIdRoute = AlunosIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/login': typeof LoginRoute
   '/alunos/$id': typeof AlunosIdRoute
   '/avaliacoes/rubrica': typeof AvaliacoesRubricaRoute
   '/formacao/$slug': typeof FormacaoSlugRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/login': typeof LoginRoute
   '/alunos/$id': typeof AlunosIdRoute
   '/avaliacoes/rubrica': typeof AvaliacoesRubricaRoute
   '/formacao/$slug': typeof FormacaoSlugRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/login': typeof LoginRoute
   '/alunos/$id': typeof AlunosIdRoute
   '/avaliacoes/rubrica': typeof AvaliacoesRubricaRoute
   '/formacao/$slug': typeof FormacaoSlugRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/login'
     | '/alunos/$id'
     | '/avaliacoes/rubrica'
     | '/formacao/$slug'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/login'
     | '/alunos/$id'
     | '/avaliacoes/rubrica'
     | '/formacao/$slug'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/login'
     | '/alunos/$id'
     | '/avaliacoes/rubrica'
     | '/formacao/$slug'
@@ -198,6 +210,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  LoginRoute: typeof LoginRoute
   AlunosIdRoute: typeof AlunosIdRoute
   AvaliacoesRubricaRoute: typeof AvaliacoesRubricaRoute
   FormacaoSlugRoute: typeof FormacaoSlugRoute
@@ -214,6 +227,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -318,6 +338,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  LoginRoute: LoginRoute,
   AlunosIdRoute: AlunosIdRoute,
   AvaliacoesRubricaRoute: AvaliacoesRubricaRoute,
   FormacaoSlugRoute: FormacaoSlugRoute,

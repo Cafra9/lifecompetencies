@@ -503,6 +503,72 @@ export type Database = {
           },
         ]
       }
+      student_assessment_meta: {
+        Row: {
+          aluno_id: string
+          created_at: string
+          fechado: boolean
+          fechado_em: string | null
+          id: string
+          observacao: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string
+          fechado?: boolean
+          fechado_em?: string | null
+          id?: string
+          observacao?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string
+          fechado?: boolean
+          fechado_em?: string | null
+          id?: string
+          observacao?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      student_assessments: {
+        Row: {
+          aluno_id: string
+          competencia: string
+          created_at: string
+          habilidade: string
+          id: string
+          nivel: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aluno_id: string
+          competencia: string
+          created_at?: string
+          habilidade: string
+          id?: string
+          nivel: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aluno_id?: string
+          competencia?: string
+          created_at?: string
+          habilidade?: string
+          id?: string
+          nivel?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
           class_id: string
