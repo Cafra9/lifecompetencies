@@ -145,6 +145,7 @@ function AvaliacoesPage() {
         alunos={alunos}
       />
     </div>
+    </AppLayout>
   );
 }
 
