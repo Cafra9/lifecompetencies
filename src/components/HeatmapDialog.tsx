@@ -10,9 +10,9 @@ import { useStudentAssessment } from "@/lib/assessments-store";
 
 // Heatmap em tons de vermelho — quanto mais quente, maior o domínio da habilidade.
 const HEAT_CELL: Record<Nivel | "vazio", string> = {
-  iniciando: "bg-red-200 text-red-900",
-  desenvolvendo: "bg-red-400 text-white",
-  dominando: "bg-red-600 text-white",
+  iniciando: "bg-green-200 text-green-900",
+  desenvolvendo: "bg-green-500 text-white",
+  dominando: "bg-green-700 text-white",
   vazio: "bg-muted text-muted-foreground",
 };
 

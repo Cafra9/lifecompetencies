@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { BookMarked, Loader2 } from "lucide-react";
+import { BookMarked, Loader2, Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -70,6 +70,7 @@ function LoginPage() {
 function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -88,7 +89,24 @@ function SignInForm() {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="pass-in">Senha</Label>
-        <Input id="pass-in" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <div className="relative">
+          <Input
+            id="pass-in"
+            type={showPass ? "text" : "password"}
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPass((v) => !v)}
+            aria-label={showPass ? "Ocultar senha" : "Revelar senha"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
       <Button type="submit" className="w-full" disabled={busy}>
         {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Entrar
@@ -101,6 +119,7 @@ function SignUpForm() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -131,7 +150,25 @@ function SignUpForm() {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="pass-up">Senha</Label>
-        <Input id="pass-up" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+        <div className="relative">
+          <Input
+            id="pass-up"
+            type={showPass ? "text" : "password"}
+            required
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPass((v) => !v)}
+            aria-label={showPass ? "Ocultar senha" : "Revelar senha"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
       <Button type="submit" className="w-full" disabled={busy}>
         {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Criar conta
