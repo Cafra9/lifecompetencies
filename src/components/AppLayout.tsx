@@ -1,6 +1,7 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { BookMarked, LayoutGrid, ClipboardCheck, Library, Users2, LogOut } from "lucide-react";
 import type { ReactNode } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutGrid },
@@ -11,6 +12,16 @@ const nav = [
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const displayName =
+    (user?.user_metadata?.nome as string | undefined) ||
+    (user?.user_metadata?.full_name as string | undefined) ||
+    (user?.email ? user.email.split("@")[0] : "Lisandra");
+  const handleSignOut = async () => {
+    await signOut();
+    navigate({ to: "/login" });
+  };
   return (
     <div className="min-h-screen bg-[oklch(0.98_0.005_250)]">
       <header className="bg-background border-b sticky top-0 z-20">
