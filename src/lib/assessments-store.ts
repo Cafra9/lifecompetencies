@@ -30,15 +30,9 @@ function writeAll(data: Record<string, StudentAssessment>) {
 }
 
 export function useStudentAssessment(alunoId: string) {
-  const [data, setData] = useState<AssessmentMap>(
-    () => readAll()[alunoId]?.avaliacoes ?? {},
-  );
-  const [observacao, setObservacao] = useState<string>(
-    () => readAll()[alunoId]?.observacao ?? "",
-  );
-  const [fechado, setFechado] = useState<boolean>(
-    () => readAll()[alunoId]?.fechado ?? false,
-  );
+  const [data, setData] = useState<AssessmentMap>({});
+  const [observacao, setObservacao] = useState<string>("");
+  const [fechado, setFechado] = useState<boolean>(false);
 
   useEffect(() => {
     const load = () => {
