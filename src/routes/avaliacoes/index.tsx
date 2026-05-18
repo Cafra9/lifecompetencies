@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { AvaliarDialog, RelatorioDialog } from "@/components/AvaliarDialog";
 import { HeatmapDialog } from "@/components/HeatmapDialog";
+import { ClassHeatmapDialog } from "@/components/ClassHeatmapDialog";
 import { useAllAssessments, countByLevel, useStudentAssessment } from "@/lib/assessments-store";
 import { toast } from "sonner";
 
@@ -41,6 +42,7 @@ function AvaliacoesPage() {
   const [avaliarId, setAvaliarId] = useState<string | null>(null);
   const [relatorioId, setRelatorioId] = useState<string | null>(null);
   const [heatmapId, setHeatmapId] = useState<string | null>(null);
+  const [classHeatmap, setClassHeatmap] = useState(false);
 
   const filtrados = alunos.filter(
     (a) =>
@@ -57,11 +59,16 @@ function AvaliacoesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Avaliações</h1>
           <p className="text-muted-foreground mt-1">Gerencie avaliações de competências dos alunos</p>
         </div>
-        <Link to="/avaliacoes/rubrica">
-          <Button variant="outline" className="gap-2">
-            <BookOpen className="h-4 w-4" /> Ver Rubrica
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setClassHeatmap(true)}>
+            <Flame className="h-4 w-4" /> Heatmap da turma
           </Button>
-        </Link>
+          <Link to="/avaliacoes/rubrica">
+            <Button variant="outline" className="gap-2">
+              <BookOpen className="h-4 w-4" /> Ver Rubrica
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card>
@@ -121,6 +128,12 @@ function AvaliacoesPage() {
           alunoNome={ativo(heatmapId)!.nome}
         />
       )}
+
+      <ClassHeatmapDialog
+        open={classHeatmap}
+        onOpenChange={setClassHeatmap}
+        alunos={alunos}
+      />
     </div>
   );
 }
