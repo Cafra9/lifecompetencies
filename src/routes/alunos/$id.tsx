@@ -220,6 +220,94 @@ function AlunoDetalhe() {
       </div>
 
       <Card>
+        <CardHeader>
+          <CardTitle>Evidências por exigência</CardTitle>
+          <CardDescription>
+            {schoolYearId
+              ? `Apenas exigências cadastradas para o ano da turma deste aluno.`
+              : `Vincule um ano escolar à turma em /turmas para liberar a captura.`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!schoolYearId ? (
+            <p className="text-sm text-muted-foreground">Turma sem ano escolar definido.</p>
+          ) : (yearReqs as any[] | undefined)?.length ? (
+            <form onSubmit={salvarEvidencia} className="grid gap-3 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <Label>Exigência</Label>
+                <Select value={evReqId} onValueChange={setEvReqId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a exigência" /></SelectTrigger>
+                  <SelectContent>
+                    {(yearReqs as any[]).map((yr) => {
+                      const r = yr.requirement;
+                      if (!r?.ativo) return null;
+                      return (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.nome}{yr.obrigatorio ? " *" : ""}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                {evReqId && (() => {
+                  const yr = (yearReqs as any[]).find((y) => y.requirement?.id === evReqId);
+                  return yr?.orientacao ? <p className="text-xs text-muted-foreground mt-1">{yr.orientacao}</p> : null;
+                })()}
+              </div>
+              <div className="md:col-span-2">
+                <Label>Título</Label>
+                <Input value={evTitulo} onChange={(e) => setEvTitulo(e.target.value)} required />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Descrição</Label>
+                <Textarea value={evDescricao} onChange={(e) => setEvDescricao(e.target.value)} rows={2} />
+              </div>
+              <div>
+                <Label>Período (opcional)</Label>
+                <Input value={evPeriodo} onChange={(e) => setEvPeriodo(e.target.value)} placeholder="ex.: 1º trimestre" />
+              </div>
+              <div>
+                <Label>Nota (opcional)</Label>
+                <Input type="number" step="0.1" value={evNota} onChange={(e) => setEvNota(e.target.value)} />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Arquivo (opcional)</Label>
+                <Input type="file" onChange={(e) => setEvFile(e.target.files?.[0] || null)} />
+              </div>
+              <div className="md:col-span-2">
+                <Button type="submit" disabled={evBusy || !evReqId || !evTitulo.trim()}>
+                  {evBusy ? "Salvando..." : <><Upload className="h-4 w-4 mr-2" /> Registrar evidência</>}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <p className="text-sm text-muted-foreground">Nenhuma exigência cadastrada para este ano em Configurações.</p>
+          )}
+
+          {(studentEvidences as any[] | undefined)?.length ? (
+            <div className="space-y-2 pt-2 border-t">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Registradas</p>
+              {(studentEvidences as any[]).map((e) => (
+                <div key={e.id} className="border rounded-lg p-3 text-sm flex justify-between gap-3">
+                  <div>
+                    <div className="font-medium">{e.titulo}</div>
+                    {e.descricao && <div className="text-xs text-muted-foreground">{e.descricao}</div>}
+                  </div>
+                  <div className="text-xs text-muted-foreground text-right shrink-0">
+                    {e.periodo && <div>{e.periodo}</div>}
+                    {e.nota != null && <div>Nota: {e.nota}</div>}
+                    <div>{new Date(e.created_at).toLocaleDateString("pt-BR")}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+
+
+      <Card>
         <CardHeader><CardTitle>Histórico</CardTitle></CardHeader>
         <CardContent>
           {avals?.length === 0 ? (
