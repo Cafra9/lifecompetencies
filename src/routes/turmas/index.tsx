@@ -58,7 +58,7 @@ function TurmasPage() {
     setBusy(true);
     const payload = { nome, segmento, school_year_id: editing.school_year_id || null, professor_id: user.id };
     const { error } = editing.id
-      ? await supabase.from("classes").update(payload).eq("id", editing.id)
+      ? await supabase.from("classes").update(payload as any).eq("id", editing.id)
       : await supabase.from("classes").insert(payload as any);
     setBusy(false);
     if (error) return toast.error(error.message);
