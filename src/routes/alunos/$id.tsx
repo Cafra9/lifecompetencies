@@ -28,10 +28,12 @@ function AlunoDetalhe() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const sb = supabase as any;
   const { data: aluno } = useQuery({
     queryKey: ["student", id],
-    queryFn: async () => (await supabase.from("students").select("*, classes(nome, segmento)").eq("id", id).maybeSingle()).data,
+    queryFn: async () => (await supabase.from("students").select("*, classes(nome, segmento, school_year_id)").eq("id", id).maybeSingle()).data,
   });
+  const schoolYearId = (aluno as any)?.classes?.school_year_id ?? null;
   const { data: comps } = useQuery({
     queryKey: ["competencies-with-skills"],
     queryFn: async () => (await supabase.from("competencies").select("*, skills(*)").order("ordem")).data ?? [],
@@ -39,6 +41,18 @@ function AlunoDetalhe() {
   const { data: avals } = useQuery({
     queryKey: ["assessments", id],
     queryFn: async () => (await supabase.from("assessments").select("*, skills(nome, competency_id, competencies(slug, nome))").eq("student_id", id).order("data", { ascending: false })).data ?? [],
+  });
+  const { data: yearReqs } = useQuery({
+    queryKey: ["year-reqs", schoolYearId],
+    enabled: !!schoolYearId,
+    queryFn: async () =>
+      (await sb.from("year_requirements")
+        .select("id, obrigatorio, orientacao, requirement:evidence_requirements(id, slug, nome, descricao, ativo)")
+        .eq("school_year_id", schoolYearId)).data ?? [],
+  });
+  const { data: studentEvidences } = useQuery({
+    queryKey: ["student-evidences", id],
+    queryFn: async () => (await sb.from("student_evidences").select("*").eq("student_id", id).order("created_at", { ascending: false })).data ?? [],
   });
 
   const radar = useMemo(() => {
