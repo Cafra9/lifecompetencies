@@ -6,9 +6,9 @@ export type SchoolSegment = "infantil" | "fundamental_1" | "fundamental_2" | "me
 export type AppRole = "professor" | "coordenador" | "diretora" | "admin";
 
 export const SEGMENT_LABELS: Record<SchoolSegment, string> = {
-  infantil: "K (Infantil)",
-  fundamental_1: "Fundamental I",
-  fundamental_2: "Fundamental II",
+  infantil: "Early Years (Kindergarten)",
+  fundamental_1: "Elementary School",
+  fundamental_2: "Elementary School",
   medio: "Ensino Médio",
 };
 

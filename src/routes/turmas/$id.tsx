@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,7 @@ function TurmaDetalhe() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const sb = supabase as any;
   const { data: turma } = useQuery({
     queryKey: ["class", id],
     queryFn: async () => (await supabase.from("classes").select("*").eq("id", id).maybeSingle()).data,
@@ -28,6 +29,30 @@ function TurmaDetalhe() {
     queryKey: ["students", id],
     queryFn: async () => (await supabase.from("students").select("*").eq("class_id", id).order("nome")).data ?? [],
   });
+  const { data: year } = useQuery({
+    queryKey: ["class-year", (turma as any)?.school_year_id],
+    enabled: !!(turma as any)?.school_year_id,
+    queryFn: async () =>
+      (await sb.from("school_years").select("*").eq("id", (turma as any).school_year_id).maybeSingle()).data,
+  });
+  const { data: cts } = useQuery({
+    queryKey: ["class-teachers", id],
+    queryFn: async () => (await sb.from("class_teachers").select("*").eq("class_id", id)).data ?? [],
+  });
+  const teacherIds = useMemo(() => {
+    const ids = new Set<string>();
+    const t: any = turma;
+    if (t?.professor_regente_id) ids.add(t.professor_regente_id);
+    if (t?.professor_id) ids.add(t.professor_id);
+    (cts ?? []).forEach((c: any) => ids.add(c.user_id));
+    return [...ids];
+  }, [turma, cts]);
+  const { data: profs } = useQuery({
+    queryKey: ["profs", teacherIds.join(",")],
+    enabled: teacherIds.length > 0,
+    queryFn: async () => (await supabase.from("profiles").select("id, nome").in("id", teacherIds)).data ?? [],
+  });
+  const profById = useMemo(() => Object.fromEntries((profs ?? []).map((p: any) => [p.id, p.nome])), [profs]);
 
   async function addAluno(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -53,8 +78,24 @@ function TurmaDetalhe() {
       <Button asChild variant="ghost" size="sm"><Link to="/turmas"><ArrowLeft className="h-4 w-4 mr-1" /> Turmas</Link></Button>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{turma.nome}</h1>
-          <p className="text-muted-foreground">{SEGMENT_LABEL[turma.segmento]}</p>
+          <h1 className="text-3xl font-bold">{turma.nome}{turma.arquivada && <span className="ml-2 text-xs font-normal text-muted-foreground">(arquivada)</span>}</h1>
+          <p className="text-muted-foreground">
+            {(year as any)?.nome ? `${(year as any).nome} · ` : ""}{SEGMENT_LABEL[turma.segmento]}
+          </p>
+          {(turma.professor_regente_id || (cts as any[])?.length) && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {turma.professor_regente_id && (
+                <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary">
+                  {profById[turma.professor_regente_id] ?? "Regente"} · Homeroom
+                </span>
+              )}
+              {(cts as any[] | undefined)?.map((c) => (
+                <span key={c.id} className="text-xs px-2 py-0.5 rounded bg-muted">
+                  {profById[c.user_id] ?? "Professor"}{c.papel ? ` · ${c.papel}` : ""}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <Dialog open={open} onOpenChange={setOpen}>
