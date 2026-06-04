@@ -104,6 +104,16 @@ function RelatorioAlunoPage() {
   const includesRubric = activeRequirements.some((r) => r.slug === "rubrica");
   const competencias = Object.keys(COMPETENCIA_CORES);
 
+  // Validação: quais exigências obrigatórias estão sem registros?
+  const missingRequired = activeRequirements
+    .map((r) => {
+      const yr = yearReqs.find((y) => y.requirement_id === r.id);
+      if (!yr?.obrigatorio) return null;
+      const has = r.slug === "rubrica" ? rubrics.length > 0 : evidencesByReq(r).length > 0;
+      return has ? null : r;
+    })
+    .filter(Boolean) as Requirement[];
+
   return (
     <AppLayout>
       <div className="space-y-6">
