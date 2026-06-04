@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-type Role = "professor" | "coordenador" | "admin";
+type Role = "professor" | "coordenador" | "diretora" | "admin";
 
 interface AuthCtx {
   user: User | null;
@@ -25,7 +25,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        // defer to avoid deadlock
         setTimeout(() => loadRoles(s.user.id), 0);
       } else {
         setRoles([]);
@@ -57,4 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export const useAuth = () => useContext(Ctx);
 export const useIsAdmin = () => useAuth().roles.includes("admin");
+export const useIsDiretora = () => useAuth().roles.includes("diretora");
 export const useIsCoordenador = () => useAuth().roles.includes("coordenador");
+export const useIsStaff = () => {
+  const { roles } = useAuth();
+  return roles.some((r) => r === "admin" || r === "diretora" || r === "coordenador");
+};
+export const useCanConfigure = () => {
+  const { roles } = useAuth();
+  return roles.some((r) => r === "admin" || r === "diretora" || r === "coordenador");
+};
