@@ -1,131 +1,121 @@
 
-## Visão geral
+## Objetivo
 
-Criar uma área **Configurações** (admin/diretora) para:
-1. Convidar diretoras e coordenadoras por e-mail.
-2. Associar coordenadoras a segmentos (Infantil, Fund I, Fund II, Médio).
-3. Associar professores a ano(s) escolar(es).
-4. Coordenadora definir, por ano sob sua responsabilidade, quais tipos de evidência são exigidos (rubrica, portfólio, notas, observação de comportamento).
-5. Gerar **Relatório Consolidado do Aluno**, agregando rubricas + portfólio + observações de todos os professores do ano.
+Transformar **anos escolares** e **tipos de exigência** de enums fixos no código em **registros de banco**, permitindo CRUD pela administração. Adicionar CRUD de professores e fazer o relatório final usar dinamicamente as exigências cadastradas para o ano do aluno.
 
 ---
 
-## 1. Modelo de dados (migrações)
+## 1. Banco de dados (migração única)
 
-**Novos enums**
-- Adicionar `'diretora'` a `app_role` (já tem `professor`, `coordenador`, `admin`).
-- Novo enum `evidence_type`: `rubrica`, `portfolio`, `notas`, `observacao_comportamento`.
-- Novo enum `school_year`: `infantil_1`, `infantil_2`, `infantil_3`, `ano_1`...`ano_9`, `em_1`, `em_2`, `em_3` (mapeado por segmento).
+### Novas tabelas
 
-**Novas tabelas**
+**`school_years`** — anos escolares dinâmicos
+- `codigo` (text, único, ex: `K1`, `K5`, `ANO_3`)
+- `nome` (text, ex: "K1", "5º ano")
+- `segmento` (school_segment, mantido como segmento — Infantil/Fund I/Fund II/Médio)
+- `ordem` (int)
+- `ativo` (bool)
 
-- `invitations` — convites por e-mail
-  - `email`, `role` (app_role), `segmento` (nullable), `anos` (text[] nullable), `token` (uuid), `expires_at`, `accepted_at`, `invited_by`.
-  - RLS: admin/diretora gerencia; convidado consulta pelo token via fn.
+**`evidence_requirements`** — catálogo de exigências (Rubricas, Portfólio, Relatório descritivo, Fotos, Avaliações, Observações, Produções, Projetos, etc.)
+- `nome` (text, único)
+- `descricao` (text)
+- `slug` (text, único)
+- `ativo` (bool)
 
-- `coordinator_segments` — coordenadora ↔ segmento
-  - `user_id`, `segmento`. Unique. Admin/diretora escreve; coordenadora lê o seu.
+**`year_requirements`** — junção ano × exigência (substitui `year_evidence_requirements`)
+- `school_year_id` (fk)
+- `requirement_id` (fk)
+- `obrigatorio` (bool)
+- `orientacao` (text)
+- unique (school_year_id, requirement_id)
 
-- `teacher_years` — professor ↔ ano(s)
-  - `user_id`, `segmento`, `ano` (school_year). Unique. Coordenadora do segmento + admin escrevem; professor lê o seu.
+### Tabelas alteradas
 
-- `year_evidence_requirements` — exigências por ano
-  - `segmento`, `ano`, `evidence_type`, `obrigatorio` (bool), `descricao`, `created_by`.
-  - Unique (segmento, ano, evidence_type). Coordenadora do segmento escreve; todos autenticados leem.
+- **`teacher_years`** — substituir coluna `ano` (enum) por `school_year_id` (fk para `school_years`); manter `segmento` opcional.
+- **`student_evidences`** — substituir `evidence_type` (enum) por `requirement_id` (fk para `evidence_requirements`).
+- **`classes`** — adicionar `school_year_id` opcional para indicar o ano da turma (necessário para o relatório saber qual ano um aluno cursa).
 
-- `student_evidences` — entregas dos professores
-  - `student_id`, `created_by` (professor), `evidence_type`, `competency_id` (nullable), `skill_id` (nullable), `titulo`, `descricao`, `arquivo_url`, `nota` (numeric nullable), `periodo` (text — bimestre/semestre), `created_at`.
-  - RLS: professor cria/edita o próprio; coordenadora do segmento do aluno + diretora + admin leem todos.
+### Seed inicial
 
-- Reutilizar `student_assessments` (rubricas) e a tabela existente para observações; adicionar coluna `periodo` em `student_assessments` se necessário.
+- Renomear segmento `infantil` → rótulo "K" no app (mantemos o enum `school_segment` interno; só muda o label).
+- Inserir registros default em `school_years`: **K1, K2, K3, K4, K5** (segmento `infantil`) + manter anos Fund/EM existentes migrando do enum atual.
+- Inserir registros default em `evidence_requirements` a partir dos tipos atuais (Rubricas, Portfólio, Notas, Observações) + os novos do briefing (Relatório descritivo, Evidências fotográficas, Avaliações acadêmicas, Produções dos alunos, Projetos realizados).
+- Migrar dados existentes de `year_evidence_requirements` → `year_requirements`.
 
-**Funções/triggers**
-- `has_any_role(uuid, app_role[])` security definer.
-- `is_coordinator_of_segment(uuid, school_segment)` — lê `coordinator_segments`.
-- `student_segment(uuid)` — retorna segmento via `classes`.
-- Trigger em `auth.users` (já existe `handle_new_user`) — estender para ler convite pendente por e-mail e atribuir `role` + vínculos.
+### RLS
 
-**Grants** em todas as novas tabelas: `authenticated` SELECT/INSERT/UPDATE/DELETE conforme RLS, `service_role` ALL.
+- `school_years`, `evidence_requirements`: leitura para todos os autenticados; escrita só admin/diretora.
+- `year_requirements`: leitura para todos os autenticados; escrita para admin/diretora/coordenadora do segmento.
+- `teacher_years` e `student_evidences`: manter políticas atuais, ajustando para as novas colunas.
 
----
+### Depreciação
 
-## 2. Fluxo de convites
-
-- `/configuracoes/equipe` (admin + diretora): formulário "Convidar" com e-mail + papel (diretora/coordenadora/professor) + segmento (se coord) + anos (se professor).
-- Server fn `createInvitation` insere em `invitations` e dispara e-mail via **Lovable Auth Email** (template "Convite") com link `/auth?invite=<token>`.
-- Em `/auth`, se houver `?invite=...`, abre tela de signup pré-preenchida; após signup, trigger `handle_new_user` lê convite, atribui role e cria vínculo (`coordinator_segments` ou `teacher_years`).
-
-E-mails: usar `email_domain--scaffold_auth_email_templates` (ou template transacional) — exige domínio de e-mail configurado.
-
----
-
-## 3. Páginas e UI
-
-**Nova rota `/configuracoes`** (layout com sub-tabs, gated por role):
-
-- **Equipe** (admin/diretora) — listar usuários por papel, convidar, revogar, reatribuir segmento/anos.
-- **Meu segmento** (coordenadora) — ver professores do segmento, ver/editar anos atribuídos, ver exigências por ano.
-- **Exigências por ano** (coordenadora) — para cada ano do segmento, checklist dos `evidence_type` + campo descrição/orientação para o professor.
-- **Meus anos** (professor) — visualização read-only dos anos e exigências.
-
-Sidebar: novo item "Configurações" (ícone Settings) — visível para `admin`, `diretora`, `coordenadora`. Para `professor`, item "Minhas exigências".
+- Os enums `school_year` e `evidence_type` ficam **inutilizados** após a migração (deixar no banco para não quebrar, mas o código não referencia mais).
 
 ---
 
-## 4. Captura de evidências (professor)
+## 2. Configurações — novas abas/UI
 
-- Em `/alunos/$id` adicionar abas: **Rubrica**, **Portfólio**, **Notas**, **Observações** (renderizadas conforme `year_evidence_requirements` do ano do aluno).
-- Cada aba grava em `student_evidences` (ou `student_assessments` para rubrica).
-- Badge "pendente"/"completo" por exigência, por período.
+Reorganizar `/configuracoes` em 4 abas (visíveis para admin/diretora; coordenadora vê o subset dela):
 
----
+### a) **Anos escolares**
+- Tabela com colunas: código, nome, segmento, ordem, ativo.
+- Botões: **Adicionar**, **Editar**, **Excluir** (com confirmação; bloqueia exclusão se houver turmas/professores vinculados — sugere desativar).
 
-## 5. Relatório consolidado do aluno
+### b) **Exigências** (catálogo)
+- Tabela: nome, descrição, ativo.
+- CRUD completo.
 
-**Nova rota `/relatorios/aluno/$id`** (coordenadora do segmento + diretora + admin + professor do aluno):
+### c) **Exigências por ano**
+- Seletor de ano → lista de exigências do catálogo com checkbox **obrigatório** + campo **orientação**.
+- Salva em `year_requirements`.
 
-- Cabeçalho: aluno, turma, ano, professores vinculados (todos que lançaram algo).
-- **Por competência** (cards com cor de `COMPETENCIA_CORES`):
-  - Heatmap das habilidades (consolidado de todos os professores).
-  - Lista de evidências (rubricas + portfólio + notas + observações) com autor, data, tipo, anexo.
-- Filtros: período, professor, tipo de evidência.
-- Botão "Exportar PDF" reaproveitando `src/lib/pdf.ts`.
+### d) **Professores**
+- Tabela: nome, e-mail, cargo, anos atendidos (chips), status (ativo/inativo).
+- **Adicionar**: envia convite por e-mail (reaproveita `invitations`) já com anos pré-selecionados.
+- **Editar**: alterar anos atendidos (escreve em `teacher_years`), cargo (campo novo em `profiles` — `cargo` text), status (campo novo em `profiles` — `ativo` bool).
+- **Excluir**: desativa (soft delete via `ativo=false`); botão "remover papel" para revogar role professor.
 
-Server fn `getStudentConsolidatedReport(studentId)` faz `Promise.all` de:
-- `student_assessments` + `assessments` (rubricas)
-- `student_evidences` (portfólio/notas/observação)
-- `student_assessment_meta` (observação geral)
-- profiles dos `created_by` para mostrar autores.
-
----
-
-## 6. RLS resumida (linguagem natural)
-
-- **invitations**: admin e diretora gerenciam; ninguém mais lê.
-- **coordinator_segments**: admin/diretora escrevem; coordenadora lê o próprio.
-- **teacher_years**: admin/diretora/coordenadora do segmento escrevem; professor lê o próprio.
-- **year_evidence_requirements**: coordenadora do segmento e diretora escrevem; todos autenticados leem.
-- **student_evidences**: professor cria/edita as próprias; coordenadora do segmento do aluno, diretora e admin leem todas; professor lê as próprias.
-- Relatório consolidado é acessível a: professor vinculado ao aluno, coordenadora do segmento, diretora, admin.
+### e) **Equipe** (mantida)
+- Continua para diretoras/coordenadoras (convites de gestão).
 
 ---
 
-## 7. Ordem de execução
+## 3. Relatório consolidado
 
-1. Migração: enum updates + novas tabelas + grants + RLS + funções + trigger estendido.
-2. Server functions (`src/lib/*.functions.ts`): convites, gestão de equipe, exigências, evidências, relatório consolidado.
-3. UI: `/configuracoes` (4 sub-tabs por papel), item de sidebar.
-4. Captura nas páginas existentes de aluno (abas dinâmicas conforme exigências).
-5. Página `/relatorios/aluno/$id` + export PDF.
-6. Setup do e-mail de convite (chamará `email_domain--check_email_domain_status` e, se necessário, o setup dialog).
+`/relatorios/aluno/$id`:
+- Buscar o `school_year_id` do aluno via `classes.school_year_id`.
+- Buscar `year_requirements` desse ano (apenas os obrigatórios/ativos).
+- Para cada exigência, agregar as `student_evidences` correspondentes (`requirement_id`) + rubricas (`student_assessments`, se "Rubricas" estiver entre as exigências) + observações (se exigência "Observações comportamentais" presente).
+- Renderizar uma seção por exigência cadastrada — **nada hard-coded**.
+- Se o ano não tem exigências cadastradas, mostrar aviso com link para "Exigências por ano".
 
 ---
 
-## Pontos técnicos relevantes
+## 4. Código
 
-- Roles em tabela separada (`user_roles`) — manter padrão, **não** colocar em `profiles`.
-- `has_role` security definer já existe; adicionar `has_any_role` e `is_coordinator_of_segment` no mesmo padrão.
-- Trigger `handle_new_user` precisará ler `invitations.email = NEW.email` e aplicar role/vínculo dentro de `SECURITY DEFINER`.
-- `student_evidences.arquivo_url` usa bucket **privado** novo `student-evidences` (criar via `storage_create_bucket`).
-- Reaproveitar `COMPETENCIA_CORES` e rubricas verdes já definidas.
-- E-mail de convite depende de domínio configurado — se não houver, planejar caminho alternativo: copiar link de convite manualmente.
+- **Remover** `YEAR_LABELS`, `YEARS_BY_SEGMENT`, `EVIDENCE_LABELS`, `EVIDENCE_DESCRIPTIONS`, `ALL_EVIDENCE_TYPES` de `src/lib/school-config.ts` (manter apenas `SEGMENT_LABELS` ajustado: Infantil → "K").
+- Criar hooks/funções (`src/lib/years.functions.ts`, `evidence-requirements.functions.ts`, `teachers.functions.ts`) com `createServerFn` para CRUDs.
+- Substituir todos os usos dos enums por queries dinâmicas das novas tabelas.
+- Atualizar páginas de captura de evidência em `/alunos/$id` para renderizar abas com base em `year_requirements` do ano da turma do aluno.
+
+---
+
+## 5. Ordem de execução
+
+1. Migração SQL (criação de tabelas, alterações, seed e migração de dados).
+2. Server functions (years, requirements, year-requirements, teachers).
+3. UI `/configuracoes` reorganizada (4 abas + edição inline).
+4. Refatorar `school-config.ts` e remover referências aos enums.
+5. Atualizar relatório consolidado para usar `year_requirements` dinâmicas.
+6. Ajustar captura de evidências em `/alunos/$id`.
+
+---
+
+## ⚠️ Pontos de atenção
+
+- **Migração destrutiva** em `teacher_years` e `student_evidences` (troca de coluna). Faremos `ALTER` com `USING` para converter os enums existentes nos novos FKs com base no seed.
+- A **turma** precisa de `school_year_id` para o relatório funcionar — vamos adicionar e tentar inferir o ano a partir do nome da turma quando possível; caso contrário, o admin precisa preencher manualmente.
+- "K" substitui "Infantil" apenas como **label** (segmento interno continua `infantil`) — evita migração de enum.
+
+Posso prosseguir?
