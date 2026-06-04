@@ -11,10 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { competencyColor, LEVEL_LABEL, LEVEL_VALUE } from "@/lib/competencies";
-import { ArrowLeft, Upload, Download } from "lucide-react";
+import { ArrowLeft, Upload, Download, Eye, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 import { exportStudentReport } from "@/lib/pdf";
+import { EvidenceUploadDialog } from "@/components/EvidenceUploadDialog";
 
 export const Route = createFileRoute("/alunos/$id")({ component: () => <AppLayout><AlunoDetalhe /></AppLayout> });
 
