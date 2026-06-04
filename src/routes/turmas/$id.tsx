@@ -55,6 +55,34 @@ function TurmaDetalhe() {
   });
   const profById = useMemo(() => Object.fromEntries((profs ?? []).map((p: any) => [p.id, p.nome])), [profs]);
 
+  const studentIds = useMemo(() => (alunos ?? []).map((a: any) => a.id), [alunos]);
+  const { data: classEvidences } = useQuery({
+    queryKey: ["class-evidences", id, studentIds.join(",")],
+    enabled: studentIds.length > 0,
+    queryFn: async () =>
+      (await sb.from("student_evidences")
+        .select("id, student_id, requirement_id, created_at, titulo")
+        .in("student_id", studentIds)
+        .order("created_at", { ascending: false })).data ?? [],
+  });
+  const { data: yearReqs } = useQuery({
+    queryKey: ["class-year-reqs", (turma as any)?.school_year_id],
+    enabled: !!(turma as any)?.school_year_id,
+    queryFn: async () =>
+      (await sb.from("year_requirements")
+        .select("id, obrigatorio, requirement:evidence_requirements(id, slug, nome, ativo)")
+        .eq("school_year_id", (turma as any).school_year_id)).data ?? [],
+  });
+
+  const evidenceByStudent = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    (classEvidences as any[] | undefined)?.forEach((e) => {
+      (map[e.student_id] ??= []).push(e);
+    });
+    return map;
+  }, [classEvidences]);
+
+
   async function addAluno(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
