@@ -146,6 +146,27 @@ export type Database = {
         }
         Relationships: []
       }
+      coordinator_segments: {
+        Row: {
+          created_at: string
+          id: string
+          segmento: Database["public"]["Enums"]["school_segment"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          segmento: Database["public"]["Enums"]["school_segment"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          segmento?: Database["public"]["Enums"]["school_segment"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       course_modules: {
         Row: {
           conteudo: string | null
@@ -244,6 +265,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          anos: Database["public"]["Enums"]["school_year"][] | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          segmento: Database["public"]["Enums"]["school_segment"] | null
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          anos?: Database["public"]["Enums"]["school_year"][] | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          segmento?: Database["public"]["Enums"]["school_segment"] | null
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          anos?: Database["public"]["Enums"]["school_year"][] | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          segmento?: Database["public"]["Enums"]["school_segment"] | null
+          token?: string
+        }
+        Relationships: []
       }
       lesson_plan_comments: {
         Row: {
@@ -569,6 +629,76 @@ export type Database = {
         }
         Relationships: []
       }
+      student_evidences: {
+        Row: {
+          arquivo_url: string | null
+          competency_id: string | null
+          created_at: string
+          created_by: string
+          descricao: string | null
+          evidence_type: Database["public"]["Enums"]["evidence_type"]
+          id: string
+          nota: number | null
+          periodo: string | null
+          skill_id: string | null
+          student_id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          arquivo_url?: string | null
+          competency_id?: string | null
+          created_at?: string
+          created_by: string
+          descricao?: string | null
+          evidence_type: Database["public"]["Enums"]["evidence_type"]
+          id?: string
+          nota?: number | null
+          periodo?: string | null
+          skill_id?: string | null
+          student_id: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          arquivo_url?: string | null
+          competency_id?: string | null
+          created_at?: string
+          created_by?: string
+          descricao?: string | null
+          evidence_type?: Database["public"]["Enums"]["evidence_type"]
+          id?: string
+          nota?: number | null
+          periodo?: string | null
+          skill_id?: string | null
+          student_id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_evidences_competency_id_fkey"
+            columns: ["competency_id"]
+            isOneToOne: false
+            referencedRelation: "competencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_evidences_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_evidences_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           class_id: string
@@ -598,6 +728,30 @@ export type Database = {
           },
         ]
       }
+      teacher_years: {
+        Row: {
+          ano: Database["public"]["Enums"]["school_year"]
+          created_at: string
+          id: string
+          segmento: Database["public"]["Enums"]["school_segment"]
+          user_id: string
+        }
+        Insert: {
+          ano: Database["public"]["Enums"]["school_year"]
+          created_at?: string
+          id?: string
+          segmento: Database["public"]["Enums"]["school_segment"]
+          user_id: string
+        }
+        Update: {
+          ano?: Database["public"]["Enums"]["school_year"]
+          created_at?: string
+          id?: string
+          segmento?: Database["public"]["Enums"]["school_segment"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -619,14 +773,64 @@ export type Database = {
         }
         Relationships: []
       }
+      year_evidence_requirements: {
+        Row: {
+          ano: Database["public"]["Enums"]["school_year"]
+          created_at: string
+          created_by: string
+          descricao: string | null
+          evidence_type: Database["public"]["Enums"]["evidence_type"]
+          id: string
+          obrigatorio: boolean
+          segmento: Database["public"]["Enums"]["school_segment"]
+          updated_at: string
+        }
+        Insert: {
+          ano: Database["public"]["Enums"]["school_year"]
+          created_at?: string
+          created_by: string
+          descricao?: string | null
+          evidence_type: Database["public"]["Enums"]["evidence_type"]
+          id?: string
+          obrigatorio?: boolean
+          segmento: Database["public"]["Enums"]["school_segment"]
+          updated_at?: string
+        }
+        Update: {
+          ano?: Database["public"]["Enums"]["school_year"]
+          created_at?: string
+          created_by?: string
+          descricao?: string | null
+          evidence_type?: Database["public"]["Enums"]["evidence_type"]
+          id?: string
+          obrigatorio?: boolean
+          segmento?: Database["public"]["Enums"]["school_segment"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      has_any_role: {
+        Args: {
+          _roles: Database["public"]["Enums"]["app_role"][]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_coordinator_of_segment: {
+        Args: {
+          _segmento: Database["public"]["Enums"]["school_segment"]
           _user_id: string
         }
         Returns: boolean
@@ -639,6 +843,11 @@ export type Database = {
         | "em_desenvolvimento"
         | "proficiente"
         | "avancado"
+      evidence_type:
+        | "rubrica"
+        | "portfolio"
+        | "notas"
+        | "observacao_comportamento"
       resource_type:
         | "artigo"
         | "video"
@@ -647,6 +856,22 @@ export type Database = {
         | "guia"
         | "externo"
       school_segment: "infantil" | "fundamental_1" | "fundamental_2" | "medio"
+      school_year:
+        | "infantil_1"
+        | "infantil_2"
+        | "infantil_3"
+        | "ano_1"
+        | "ano_2"
+        | "ano_3"
+        | "ano_4"
+        | "ano_5"
+        | "ano_6"
+        | "ano_7"
+        | "ano_8"
+        | "ano_9"
+        | "em_1"
+        | "em_2"
+        | "em_3"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -781,6 +1006,12 @@ export const Constants = {
         "proficiente",
         "avancado",
       ],
+      evidence_type: [
+        "rubrica",
+        "portfolio",
+        "notas",
+        "observacao_comportamento",
+      ],
       resource_type: [
         "artigo",
         "video",
@@ -790,6 +1021,23 @@ export const Constants = {
         "externo",
       ],
       school_segment: ["infantil", "fundamental_1", "fundamental_2", "medio"],
+      school_year: [
+        "infantil_1",
+        "infantil_2",
+        "infantil_3",
+        "ano_1",
+        "ano_2",
+        "ano_3",
+        "ano_4",
+        "ano_5",
+        "ano_6",
+        "ano_7",
+        "ano_8",
+        "ano_9",
+        "em_1",
+        "em_2",
+        "em_3",
+      ],
     },
   },
 } as const
