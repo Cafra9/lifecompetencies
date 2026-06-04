@@ -98,6 +98,7 @@ export type Database = {
           id: string
           nome: string
           professor_id: string
+          school_year_id: string | null
           segmento: Database["public"]["Enums"]["school_segment"]
         }
         Insert: {
@@ -105,6 +106,7 @@ export type Database = {
           id?: string
           nome: string
           professor_id: string
+          school_year_id?: string | null
           segmento: Database["public"]["Enums"]["school_segment"]
         }
         Update: {
@@ -112,9 +114,18 @@ export type Database = {
           id?: string
           nome?: string
           professor_id?: string
+          school_year_id?: string | null
           segmento?: Database["public"]["Enums"]["school_segment"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "classes_school_year_id_fkey"
+            columns: ["school_year_id"]
+            isOneToOne: false
+            referencedRelation: "school_years"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       competencies: {
         Row: {
@@ -265,6 +276,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      evidence_requirements: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       invitations: {
         Row: {
@@ -434,7 +475,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ativo: boolean
           avatar_url: string | null
+          cargo: string | null
           created_at: string
           disciplina: string | null
           email: string
@@ -444,7 +487,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ativo?: boolean
           avatar_url?: string | null
+          cargo?: string | null
           created_at?: string
           disciplina?: string | null
           email: string
@@ -454,7 +499,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ativo?: boolean
           avatar_url?: string | null
+          cargo?: string | null
           created_at?: string
           disciplina?: string | null
           email?: string
@@ -524,6 +571,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      school_years: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          segmento: Database["public"]["Enums"]["school_segment"]
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          segmento: Database["public"]["Enums"]["school_segment"]
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          segmento?: Database["public"]["Enums"]["school_segment"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       skills: {
         Row: {
@@ -640,6 +720,7 @@ export type Database = {
           id: string
           nota: number | null
           periodo: string | null
+          requirement_id: string | null
           skill_id: string | null
           student_id: string
           titulo: string
@@ -655,6 +736,7 @@ export type Database = {
           id?: string
           nota?: number | null
           periodo?: string | null
+          requirement_id?: string | null
           skill_id?: string | null
           student_id: string
           titulo: string
@@ -670,6 +752,7 @@ export type Database = {
           id?: string
           nota?: number | null
           periodo?: string | null
+          requirement_id?: string | null
           skill_id?: string | null
           student_id?: string
           titulo?: string
@@ -681,6 +764,13 @@ export type Database = {
             columns: ["competency_id"]
             isOneToOne: false
             referencedRelation: "competencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_evidences_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_requirements"
             referencedColumns: ["id"]
           },
           {
@@ -733,6 +823,7 @@ export type Database = {
           ano: Database["public"]["Enums"]["school_year"]
           created_at: string
           id: string
+          school_year_id: string | null
           segmento: Database["public"]["Enums"]["school_segment"]
           user_id: string
         }
@@ -740,6 +831,7 @@ export type Database = {
           ano: Database["public"]["Enums"]["school_year"]
           created_at?: string
           id?: string
+          school_year_id?: string | null
           segmento: Database["public"]["Enums"]["school_segment"]
           user_id: string
         }
@@ -747,10 +839,19 @@ export type Database = {
           ano?: Database["public"]["Enums"]["school_year"]
           created_at?: string
           id?: string
+          school_year_id?: string | null
           segmento?: Database["public"]["Enums"]["school_segment"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "teacher_years_school_year_id_fkey"
+            columns: ["school_year_id"]
+            isOneToOne: false
+            referencedRelation: "school_years"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -808,6 +909,54 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      year_requirements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          obrigatorio: boolean
+          orientacao: string | null
+          requirement_id: string
+          school_year_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          obrigatorio?: boolean
+          orientacao?: string | null
+          requirement_id: string
+          school_year_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          obrigatorio?: boolean
+          orientacao?: string | null
+          requirement_id?: string
+          school_year_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "year_requirements_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "year_requirements_school_year_id_fkey"
+            columns: ["school_year_id"]
+            isOneToOne: false
+            referencedRelation: "school_years"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
