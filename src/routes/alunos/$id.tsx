@@ -11,10 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { competencyColor, LEVEL_LABEL, LEVEL_VALUE } from "@/lib/competencies";
-import { ArrowLeft, Upload, Download } from "lucide-react";
+import { ArrowLeft, Upload, Download, Eye, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 import { exportStudentReport } from "@/lib/pdf";
+import { EvidenceUploadDialog } from "@/components/EvidenceUploadDialog";
 
 export const Route = createFileRoute("/alunos/$id")({ component: () => <AppLayout><AlunoDetalhe /></AppLayout> });
 
@@ -27,14 +28,8 @@ function AlunoDetalhe() {
   const [obs, setObs] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
-  // Evidência (vinculada a year_requirements)
-  const [evReqId, setEvReqId] = useState<string>("");
-  const [evTitulo, setEvTitulo] = useState("");
-  const [evDescricao, setEvDescricao] = useState("");
-  const [evNota, setEvNota] = useState("");
-  const [evPeriodo, setEvPeriodo] = useState("");
-  const [evFile, setEvFile] = useState<File | null>(null);
-  const [evBusy, setEvBusy] = useState(false);
+
+
 
   const sb = supabase as any;
   const { data: aluno } = useQuery({
@@ -92,43 +87,8 @@ function AlunoDetalhe() {
     else { toast.success("Avaliação registrada"); setSkillId(""); setObs(""); setFile(null); qc.invalidateQueries({ queryKey: ["assessments", id] }); }
   }
 
-  // Mapear slug → enum evidence_type aceito no banco
-  function slugToEvidenceType(slug: string): "rubrica" | "portfolio" | "notas" | "observacao_comportamento" {
-    if (slug === "rubrica" || slug === "portfolio" || slug === "notas") return slug;
-    return "observacao_comportamento";
-  }
 
-  async function salvarEvidencia(e: React.FormEvent) {
-    e.preventDefault();
-    if (!user || !evReqId || !evTitulo.trim()) return;
-    const req = (yearReqs as any[] | undefined)?.find((r) => r.id === evReqId || r.requirement?.id === evReqId);
-    const requirement = req?.requirement ?? req;
-    if (!requirement?.id) return toast.error("Exigência inválida");
-    setEvBusy(true);
-    let arquivo_url: string | null = null;
-    if (evFile) {
-      const path = `${user.id}/${id}/${Date.now()}_${evFile.name}`;
-      const { error: upErr } = await supabase.storage.from("student-evidences").upload(path, evFile);
-      if (upErr) { toast.error(upErr.message); setEvBusy(false); return; }
-      arquivo_url = path;
-    }
-    const { error } = await sb.from("student_evidences").insert({
-      student_id: id,
-      created_by: user.id,
-      requirement_id: requirement.id,
-      evidence_type: slugToEvidenceType(requirement.slug),
-      titulo: evTitulo.trim(),
-      descricao: evDescricao || null,
-      nota: evNota ? Number(evNota) : null,
-      periodo: evPeriodo || null,
-      arquivo_url,
-    });
-    setEvBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Evidência registrada");
-    setEvReqId(""); setEvTitulo(""); setEvDescricao(""); setEvNota(""); setEvPeriodo(""); setEvFile(null);
-    qc.invalidateQueries({ queryKey: ["student-evidences", id] });
-  }
+
 
   function gerarPDF() {
     if (!aluno || !avals) return;
@@ -219,91 +179,11 @@ function AlunoDetalhe() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Evidências por exigência</CardTitle>
-          <CardDescription>
-            {schoolYearId
-              ? `Apenas exigências cadastradas para o ano da turma deste aluno.`
-              : `Vincule um ano escolar à turma em /turmas para liberar a captura.`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {!schoolYearId ? (
-            <p className="text-sm text-muted-foreground">Turma sem ano escolar definido.</p>
-          ) : (yearReqs as any[] | undefined)?.length ? (
-            <form onSubmit={salvarEvidencia} className="grid gap-3 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <Label>Exigência</Label>
-                <Select value={evReqId} onValueChange={setEvReqId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione a exigência" /></SelectTrigger>
-                  <SelectContent>
-                    {(yearReqs as any[]).map((yr) => {
-                      const r = yr.requirement;
-                      if (!r?.ativo) return null;
-                      return (
-                        <SelectItem key={r.id} value={r.id}>
-                          {r.nome}{yr.obrigatorio ? " *" : ""}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-                {evReqId && (() => {
-                  const yr = (yearReqs as any[]).find((y) => y.requirement?.id === evReqId);
-                  return yr?.orientacao ? <p className="text-xs text-muted-foreground mt-1">{yr.orientacao}</p> : null;
-                })()}
-              </div>
-              <div className="md:col-span-2">
-                <Label>Título</Label>
-                <Input value={evTitulo} onChange={(e) => setEvTitulo(e.target.value)} required />
-              </div>
-              <div className="md:col-span-2">
-                <Label>Descrição</Label>
-                <Textarea value={evDescricao} onChange={(e) => setEvDescricao(e.target.value)} rows={2} />
-              </div>
-              <div>
-                <Label>Período (opcional)</Label>
-                <Input value={evPeriodo} onChange={(e) => setEvPeriodo(e.target.value)} placeholder="ex.: 1º trimestre" />
-              </div>
-              <div>
-                <Label>Nota (opcional)</Label>
-                <Input type="number" step="0.1" value={evNota} onChange={(e) => setEvNota(e.target.value)} />
-              </div>
-              <div className="md:col-span-2">
-                <Label>Arquivo (opcional)</Label>
-                <Input type="file" onChange={(e) => setEvFile(e.target.files?.[0] || null)} />
-              </div>
-              <div className="md:col-span-2">
-                <Button type="submit" disabled={evBusy || !evReqId || !evTitulo.trim()}>
-                  {evBusy ? "Salvando..." : <><Upload className="h-4 w-4 mr-2" /> Registrar evidência</>}
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <p className="text-sm text-muted-foreground">Nenhuma exigência cadastrada para este ano em Configurações.</p>
-          )}
-
-          {(studentEvidences as any[] | undefined)?.length ? (
-            <div className="space-y-2 pt-2 border-t">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Registradas</p>
-              {(studentEvidences as any[]).map((e) => (
-                <div key={e.id} className="border rounded-lg p-3 text-sm flex justify-between gap-3">
-                  <div>
-                    <div className="font-medium">{e.titulo}</div>
-                    {e.descricao && <div className="text-xs text-muted-foreground">{e.descricao}</div>}
-                  </div>
-                  <div className="text-xs text-muted-foreground text-right shrink-0">
-                    {e.periodo && <div>{e.periodo}</div>}
-                    {e.nota != null && <div>Nota: {e.nota}</div>}
-                    <div>{new Date(e.created_at).toLocaleDateString("pt-BR")}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+      <StudentEvidencesCard
+        studentId={id}
+        yearReqs={(yearReqs as any[] | undefined) ?? []}
+        evidences={(studentEvidences as any[] | undefined) ?? []}
+      />
 
 
 
@@ -335,5 +215,136 @@ function AlunoDetalhe() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function StudentEvidencesCard({
+  studentId,
+  yearReqs,
+  evidences,
+}: {
+  studentId: string;
+  yearReqs: any[];
+  evidences: any[];
+}) {
+  const qc = useQueryClient();
+  const sb = supabase as any;
+  const { user } = useAuth();
+
+  const creatorIds = useMemo(() => [...new Set(evidences.map((e) => e.created_by).filter(Boolean))], [evidences]);
+  const { data: profs } = useQuery({
+    queryKey: ["evidence-profs", creatorIds.join(",")],
+    enabled: creatorIds.length > 0,
+    queryFn: async () => (await supabase.from("profiles").select("id, nome").in("id", creatorIds)).data ?? [],
+  });
+  const profById = useMemo(
+    () => Object.fromEntries((profs ?? []).map((p: any) => [p.id, p.nome])),
+    [profs],
+  );
+
+  const fulfilledReqIds = useMemo(
+    () => new Set(evidences.map((e) => e.requirement_id).filter(Boolean)),
+    [evidences],
+  );
+
+  async function openFile(path: string, download = false) {
+    const { data, error } = await supabase.storage
+      .from("student-evidences")
+      .createSignedUrl(path, 60 * 10, download ? { download: true } : undefined);
+    if (error || !data?.signedUrl) return toast.error("Não foi possível abrir o arquivo");
+    window.open(data.signedUrl, "_blank");
+  }
+
+  async function deleteEvidence(ev: any) {
+    if (!confirm(`Excluir "${ev.titulo}"?`)) return;
+    if (ev.arquivo_url) {
+      await supabase.storage.from("student-evidences").remove([ev.arquivo_url]);
+    }
+    const { error } = await sb.from("student_evidences").delete().eq("id", ev.id);
+    if (error) return toast.error(error.message);
+    toast.success("Evidência removida");
+    qc.invalidateQueries({ queryKey: ["student-evidences", studentId] });
+    qc.invalidateQueries({ queryKey: ["class-evidences"] });
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+        <div>
+          <CardTitle>Evidências do Aluno</CardTitle>
+          <CardDescription>Arquivos disponíveis para o relatório de Competências para a Vida</CardDescription>
+        </div>
+        <EvidenceUploadDialog
+          studentId={studentId}
+          trigger={<Button size="sm"><Plus className="h-4 w-4 mr-1" /> Adicionar Evidência</Button>}
+        />
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {yearReqs.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {yearReqs.map((yr) => {
+              const r = yr.requirement;
+              if (!r) return null;
+              const ok = fulfilledReqIds.has(r.id);
+              const obrig = yr.obrigatorio;
+              return (
+                <span
+                  key={yr.id}
+                  className={`text-xs px-2 py-1 rounded border ${
+                    ok
+                      ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:text-emerald-300"
+                      : obrig
+                        ? "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-300"
+                        : "bg-muted text-muted-foreground border-border"
+                  }`}
+                >
+                  {ok ? "✓" : obrig ? "⚠" : "○"} {r.nome}{obrig ? " *" : ""}
+                </span>
+              );
+            })}
+          </div>
+        )}
+
+        {evidences.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            Nenhuma evidência enviada ainda.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {evidences.map((e) => (
+              <div key={e.id} className="border rounded-lg p-3 text-sm flex flex-wrap items-start gap-3 justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium">{e.titulo}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-x-2">
+                    <span className="capitalize">{String(e.evidence_type).replace(/_/g, " ")}</span>
+                    <span>· {new Date(e.created_at).toLocaleDateString("pt-BR")}</span>
+                    {profById[e.created_by] && <span>· {profById[e.created_by]}</span>}
+                    {e.periodo && <span>· {e.periodo}</span>}
+                  </div>
+                  {e.descricao && <div className="text-xs text-muted-foreground mt-1">{e.descricao}</div>}
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {e.arquivo_url && (
+                    <>
+                      <Button size="icon" variant="ghost" onClick={() => openFile(e.arquivo_url)} title="Visualizar">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => openFile(e.arquivo_url, true)} title="Baixar">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                  {(e.created_by === user?.id) && (
+                    <Button size="icon" variant="ghost" onClick={() => deleteEvidence(e)} title="Excluir">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

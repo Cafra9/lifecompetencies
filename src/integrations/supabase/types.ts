@@ -1042,6 +1042,13 @@ export type Database = {
         | "portfolio"
         | "notas"
         | "observacao_comportamento"
+        | "relatorio_descritivo"
+        | "producoes_alunos"
+        | "evidencias_fotograficas"
+        | "video"
+        | "avaliacoes_academicas"
+        | "projetos"
+        | "outro"
       resource_type:
         | "artigo"
         | "video"
@@ -1205,6 +1212,13 @@ export const Constants = {
         "portfolio",
         "notas",
         "observacao_comportamento",
+        "relatorio_descritivo",
+        "producoes_alunos",
+        "evidencias_fotograficas",
+        "video",
+        "avaliacoes_academicas",
+        "projetos",
+        "outro",
       ],
       resource_type: [
         "artigo",

@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { SEGMENT_LABEL } from "@/lib/competencies";
-import { Plus, ArrowLeft, Trash2, ClipboardCheck, User as UserIcon } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, ClipboardCheck, User as UserIcon, FileUp } from "lucide-react";
 import { toast } from "sonner";
+import { EvidenceUploadDialog } from "@/components/EvidenceUploadDialog";
 
 export const Route = createFileRoute("/turmas/$id")({ component: () => <AppLayout><TurmaDetalhe /></AppLayout> });
 
@@ -53,6 +54,34 @@ function TurmaDetalhe() {
     queryFn: async () => (await supabase.from("profiles").select("id, nome").in("id", teacherIds)).data ?? [],
   });
   const profById = useMemo(() => Object.fromEntries((profs ?? []).map((p: any) => [p.id, p.nome])), [profs]);
+
+  const studentIds = useMemo(() => (alunos ?? []).map((a: any) => a.id), [alunos]);
+  const { data: classEvidences } = useQuery({
+    queryKey: ["class-evidences", id, studentIds.join(",")],
+    enabled: studentIds.length > 0,
+    queryFn: async () =>
+      (await sb.from("student_evidences")
+        .select("id, student_id, requirement_id, created_at, titulo")
+        .in("student_id", studentIds)
+        .order("created_at", { ascending: false })).data ?? [],
+  });
+  const { data: yearReqs } = useQuery({
+    queryKey: ["class-year-reqs", (turma as any)?.school_year_id],
+    enabled: !!(turma as any)?.school_year_id,
+    queryFn: async () =>
+      (await sb.from("year_requirements")
+        .select("id, obrigatorio, requirement:evidence_requirements(id, slug, nome, ativo)")
+        .eq("school_year_id", (turma as any).school_year_id)).data ?? [],
+  });
+
+  const evidenceByStudent = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    (classEvidences as any[] | undefined)?.forEach((e) => {
+      (map[e.student_id] ??= []).push(e);
+    });
+    return map;
+  }, [classEvidences]);
+
 
   async function addAluno(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -118,20 +147,63 @@ function TurmaDetalhe() {
         <Card><CardContent className="py-10 text-center text-muted-foreground">Nenhum aluno nesta turma.</CardContent></Card>
       ) : (
         <div className="grid gap-2">
-          {alunos?.map((a: any) => (
-            <Card key={a.id}>
-              <CardContent className="py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center"><UserIcon className="h-4 w-4" /></div>
-                  <span className="font-medium">{a.nome}</span>
-                </div>
-                <div className="flex gap-1">
-                  <Button asChild variant="ghost" size="sm"><Link to="/alunos/$id" params={{ id: a.id }}><ClipboardCheck className="h-4 w-4 mr-1" /> Avaliar</Link></Button>
-                  <Button size="icon" variant="ghost" onClick={() => delAluno(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {alunos?.map((a: any) => {
+            const evs = evidenceByStudent[a.id] ?? [];
+            const fulfilled = new Set(evs.map((e) => e.requirement_id).filter(Boolean));
+            const lastUpdate = evs[0]?.created_at;
+            return (
+              <Card key={a.id}>
+                <CardContent className="py-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0"><UserIcon className="h-4 w-4" /></div>
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{a.nome}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {evs.length} evidência{evs.length === 1 ? "" : "s"}
+                        {lastUpdate && ` · atualizado em ${new Date(lastUpdate).toLocaleDateString("pt-BR")}`}
+                      </div>
+                    </div>
+                  </div>
+                  {(yearReqs as any[] | undefined)?.length ? (
+                    <div className="flex flex-wrap gap-1 order-3 basis-full md:basis-auto md:order-2">
+                      {(yearReqs as any[]).map((yr) => {
+                        const r = yr.requirement;
+                        if (!r?.ativo) return null;
+                        const ok = fulfilled.has(r.id);
+                        return (
+                          <span
+                            key={yr.id}
+                            className={`text-[10px] px-1.5 py-0.5 rounded ${
+                              ok
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                : yr.obrigatorio
+                                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                                  : "bg-muted text-muted-foreground"
+                            }`}
+                            title={r.nome}
+                          >
+                            {ok ? "✓" : yr.obrigatorio ? "⚠" : "○"} {r.nome}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                  <div className="flex gap-1 order-2 md:order-3">
+                    <EvidenceUploadDialog
+                      studentId={a.id}
+                      trigger={
+                        <Button variant="ghost" size="sm">
+                          <FileUp className="h-4 w-4 mr-1" /> Evidência
+                        </Button>
+                      }
+                    />
+                    <Button asChild variant="ghost" size="sm"><Link to="/alunos/$id" params={{ id: a.id }}><ClipboardCheck className="h-4 w-4 mr-1" /> Avaliar</Link></Button>
+                    <Button size="icon" variant="ghost" onClick={() => delAluno(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
