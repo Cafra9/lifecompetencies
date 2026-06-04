@@ -28,14 +28,8 @@ function AlunoDetalhe() {
   const [obs, setObs] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
-  // Evidência (vinculada a year_requirements)
-  const [evReqId, setEvReqId] = useState<string>("");
-  const [evTitulo, setEvTitulo] = useState("");
-  const [evDescricao, setEvDescricao] = useState("");
-  const [evNota, setEvNota] = useState("");
-  const [evPeriodo, setEvPeriodo] = useState("");
-  const [evFile, setEvFile] = useState<File | null>(null);
-  const [evBusy, setEvBusy] = useState(false);
+
+
 
   const sb = supabase as any;
   const { data: aluno } = useQuery({
