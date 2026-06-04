@@ -78,8 +78,24 @@ function TurmaDetalhe() {
       <Button asChild variant="ghost" size="sm"><Link to="/turmas"><ArrowLeft className="h-4 w-4 mr-1" /> Turmas</Link></Button>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{turma.nome}</h1>
-          <p className="text-muted-foreground">{SEGMENT_LABEL[turma.segmento]}</p>
+          <h1 className="text-3xl font-bold">{turma.nome}{turma.arquivada && <span className="ml-2 text-xs font-normal text-muted-foreground">(arquivada)</span>}</h1>
+          <p className="text-muted-foreground">
+            {(year as any)?.nome ? `${(year as any).nome} · ` : ""}{SEGMENT_LABEL[turma.segmento]}
+          </p>
+          {(turma.professor_regente_id || (cts as any[])?.length) && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {turma.professor_regente_id && (
+                <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary">
+                  {profById[turma.professor_regente_id] ?? "Regente"} · Homeroom
+                </span>
+              )}
+              {(cts as any[] | undefined)?.map((c) => (
+                <span key={c.id} className="text-xs px-2 py-0.5 rounded bg-muted">
+                  {profById[c.user_id] ?? "Professor"}{c.papel ? ` · ${c.papel}` : ""}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <Dialog open={open} onOpenChange={setOpen}>
