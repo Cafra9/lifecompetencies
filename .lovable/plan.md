@@ -1,86 +1,54 @@
-## Visão Geral
+# Briefing técnico do projeto para ChatGPT
 
-Plataforma web exclusiva para professores, com 3 perfis (Professor, Coordenador, Administrador), foco em formação continuada nas 5 competências e avaliação individual de alunos por habilidade. Backend via Lovable Cloud (Supabase), com RLS rigorosa para privacidade.
+Vou gerar um único arquivo Markdown consolidado em `/mnt/documents/projeto-isp-briefing.md`, pronto para você colar (ou anexar) no ChatGPT.
 
-## Escopo do MVP
+## O que o documento vai conter
 
-1. Autenticação (e-mail/senha) + perfis de usuário
-2. Dashboard inicial personalizado por perfil
-3. Formação Docente (5 trilhas + quiz + progresso)
-4. Biblioteca Pedagógica (repositório com filtros e upload)
-5. Planos de Aula colaborativos (CRUD, favoritos, comentários)
-6. Avaliação de Alunos (turmas, alunos, registro por habilidade, evidências)
-7. Relatórios básicos (radar das 5 competências + exportação PDF)
-8. Perfil do usuário
+1. **Visão geral**
+   - Propósito da plataforma (formação docente + avaliação por competências, framework ISP Life Competencies)
+   - Perfis de usuário (Professor, Coordenador, Admin) e fluxos principais
+   - Identidade visual (logo Aubrick ISP, cores do framework por competência, heatmap verde)
 
-Fora do MVP (Fase 2): fóruns, certificados automáticos, gamificação completa, mobile, IA, Google Drive.
+2. **Stack técnica**
+   - TanStack Start v1 + React 19 + Vite 7 + Tailwind v4 + shadcn/ui
+   - Lovable Cloud (Supabase) para auth, DB, storage
+   - TanStack Query, Recharts, jsPDF, react-hook-form + zod
 
-## Identidade Visual
+3. **Arquitetura de rotas** (mapa de `src/routes/`)
+   - `/`, `/login`, `/auth`, `/avaliacoes`, `/avaliacoes/rubrica`, `/turmas`, `/turmas/$id`, `/alunos/$id`, `/formacao`, `/formacao/$slug`, `/biblioteca`, `/planos`, `/relatorios`, `/perfil`, `/admin`
+   - Layout (`AppLayout`, `AppSidebar`) e proteção de rotas
 
-- Layout limpo, acolhedor e profissional; navegação lateral fixa; design responsivo.
-- Paleta por competência: Cognitiva (azul), Global (verde), Digital (roxo), Autoliderança (laranja), Interpessoal (vermelho).
-- Cards com ícone da competência, gráficos simples (radar, barras), tipografia clara — pensado para professores com baixo letramento digital (botões grandes, linguagem direta, fluxos curtos).
+4. **Modelo de dados (Supabase)** — todas as 15 tabelas com colunas, tipos e RLS resumida:
+   `profiles`, `user_roles`, `competencies`, `skills`, `courses`, `course_modules`, `course_progress`, `resources`, `lesson_plans`, `lesson_plan_favorites`, `lesson_plan_comments`, `classes`, `students`, `assessments`, `student_assessments`, `student_assessment_meta`, `challenges`
+   - Enum `app_role` + função `has_role` (SECURITY DEFINER)
+   - Trigger `handle_new_user` (cria profile + role `professor` no signup)
+   - Storage buckets: `resources`, `lesson-plan-files`, `assessment-evidences` (privado), `avatars`
 
-## Arquitetura de Navegação
+5. **Framework de competências ISP (Big 5)**
+   - Os 5 statements (`BIG5_STATEMENTS`)
+   - As 15 habilidades agrupadas por competência (`FRAMEWORK_SKILLS` completo: Interpessoal, Cognitiva, Global, Digital, Autoliderança — com sub-habilidades)
+   - Cores oficiais por competência (`COMPETENCIA_CORES`): Cognitivo verde, Global violeta, Digital azul, Autoliderança rosa, Interpessoal amarelo
+   - Regra de cor da página de Avaliações: bolinhas/títulos seguem cor do framework; rubricas (Iniciando/Desenvolvendo/Dominando) em degradê verde único; heatmap em tons de verde
 
-Sidebar com: Dashboard · Formação · Biblioteca · Planos de Aula · Minhas Turmas · Avaliações · Relatórios · Perfil. Admin vê seção extra "Administração" (usuários, competências/habilidades, conteúdos).
+6. **Conteúdo pedagógico**
+   - Objetivos do semestre, estratégias pedagógicas, Learning-First Design, plano de aula exemplo, escala de desenvolvimento, indicadores observáveis, badges, desafios mensais (extraído de `src/lib/iSP-content.ts`)
 
-## Modelo de Dados (Lovable Cloud)
+7. **Páginas principais e o que cada uma faz**
+   - Dashboard, Formação, Biblioteca, Planos, Turmas, Avaliações (com `AvaliarDialog`, `HeatmapDialog`, `ClassHeatmapDialog`), Relatórios (PDF via jsPDF), Admin
 
-- `profiles` (id→auth.users, nome, email, segmento, disciplina)
-- `user_roles` (user_id, role: professor|coordenador|admin) — tabela separada + função `has_role` SECURITY DEFINER
-- `competencies` (id, nome, descricao, cor, ordem)
-- `skills` (id, competency_id, nome, descricao, indicadores jsonb, ordem)
-- `courses` (trilhas) + `course_modules` + `course_progress` (user_id, module_id, concluido)
-- `quizzes` + `quiz_questions` + `quiz_attempts`
-- `resources` (biblioteca: tipo, titulo, descricao, competency_id, skill_id, segmento, disciplina, arquivo_url)
-- `lesson_plans` (autor, titulo, descricao, competency_id, skill_id, serie, disciplina, materiais, evidencias)
-- `lesson_plan_favorites`, `lesson_plan_comments`
-- `classes` (nome, segmento, professor_id)
-- `students` (nome, class_id)
-- `assessments` (student_id, skill_id, nivel 1-4, observacao, evidence_url, created_by, data)
-- `challenges` (titulo, descricao, data_inicio, data_fim)
+8. **Regras de privacidade / RLS** (resumo legível)
+   - Professor só vê suas turmas/alunos/avaliações
+   - Admin gerencia estrutura (competências, habilidades, conteúdos)
+   - Coordenador: leitura agregada
 
-Storage buckets: `resources`, `lesson-plan-files`, `assessment-evidences`, `avatars`.
+9. **Como rodar / publicar**
+   - URL preview e publicada
+   - Variáveis públicas (`VITE_SUPABASE_*`) e segredos servidor (`LOVABLE_API_KEY`, service role)
 
-## Regras de Privacidade (RLS)
+## Entrega
 
-- Professor lê/escreve apenas suas turmas, seus alunos, suas avaliações, seus planos (e planos públicos para leitura).
-- Coordenador: leitura agregada (views sem PII de aluno individual quando aplicável).
-- Admin: gerencia estrutura (competências, habilidades, usuários, conteúdo) — sem acesso pedagógico direto a avaliações individuais.
-- Toda ação registrada (created_by, timestamps).
+Após gerar o arquivo, vou expor um `<presentation-artifact>` com link de download direto do `.md`. Você poderá:
+- Baixar e anexar no ChatGPT, ou
+- Abrir e copiar o conteúdo inteiro.
 
-## Fluxos Principais
-
-- Avaliação: Minhas Turmas → Aluno → Competência → Habilidade → Nível (Inicial/Em Desenvolvimento/Proficiente/Avançado) → Observação → Upload evidência → Salvar.
-- Formação: Trilha → Módulos sequenciais → Quiz final → marca conclusão (certificado fica para Fase 2).
-- Plano de aula: criar/editar → publicar → outros favoritam/comentam/baixam.
-
-## Visualizações
-
-- Perfil do aluno: radar das 5 competências + linha do tempo de avaliações + comentários.
-- Visão da turma: médias por competência, habilidades com mais necessidade.
-- Relatório PDF: dados do aluno, níveis, comentários, recomendações.
-
-## Detalhes Técnicos
-
-- Stack: React + Vite + Tailwind + shadcn/ui; Lovable Cloud (Supabase) para auth, DB, storage.
-- Tokens semânticos no `index.css` para as 5 cores de competência (HSL).
-- Gráficos: Recharts (radar, barras).
-- PDF: `jspdf` + `jspdf-autotable`.
-- Validação de formulários: `zod` + react-hook-form.
-- Estado servidor: `@tanstack/react-query`.
-- Estrutura `competencies`/`skills` populada com seeds editáveis — você enviará os nomes reais das 15 habilidades depois; entrego com placeholders e tela admin de edição.
-- Roles em tabela separada `user_roles` + função `has_role` (evita escalonamento de privilégios).
-
-## Plano de Entrega (iterativo)
-
-1. Fundação: Cloud, schema base (competências, habilidades, perfis, roles), seeds, design system, layout + sidebar, login/cadastro.
-2. Turmas + Alunos + Avaliações (com upload de evidências) + perfil do aluno com radar.
-3. Formação Docente (trilhas, módulos, quiz, progresso).
-4. Biblioteca Pedagógica (upload, filtros, busca).
-5. Planos de Aula colaborativos (CRUD, favoritos, comentários).
-6. Relatórios (turma/aluno) + exportação PDF + dashboard consolidado.
-7. Painel Admin (editar competências/habilidades, gerir usuários) + perfil do usuário.
-
-Cada etapa entregue, testada e refinada antes da próxima.
+Sem alterações de código — apenas geração de documento.
