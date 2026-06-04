@@ -92,6 +92,44 @@ function AlunoDetalhe() {
     else { toast.success("Avaliação registrada"); setSkillId(""); setObs(""); setFile(null); qc.invalidateQueries({ queryKey: ["assessments", id] }); }
   }
 
+  // Mapear slug → enum evidence_type aceito no banco
+  function slugToEvidenceType(slug: string): "rubrica" | "portfolio" | "notas" | "observacao_comportamento" {
+    if (slug === "rubrica" || slug === "portfolio" || slug === "notas") return slug;
+    return "observacao_comportamento";
+  }
+
+  async function salvarEvidencia(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user || !evReqId || !evTitulo.trim()) return;
+    const req = (yearReqs as any[] | undefined)?.find((r) => r.id === evReqId || r.requirement?.id === evReqId);
+    const requirement = req?.requirement ?? req;
+    if (!requirement?.id) return toast.error("Exigência inválida");
+    setEvBusy(true);
+    let arquivo_url: string | null = null;
+    if (evFile) {
+      const path = `${user.id}/${id}/${Date.now()}_${evFile.name}`;
+      const { error: upErr } = await supabase.storage.from("student-evidences").upload(path, evFile);
+      if (upErr) { toast.error(upErr.message); setEvBusy(false); return; }
+      arquivo_url = path;
+    }
+    const { error } = await sb.from("student_evidences").insert({
+      student_id: id,
+      created_by: user.id,
+      requirement_id: requirement.id,
+      evidence_type: slugToEvidenceType(requirement.slug),
+      titulo: evTitulo.trim(),
+      descricao: evDescricao || null,
+      nota: evNota ? Number(evNota) : null,
+      periodo: evPeriodo || null,
+      arquivo_url,
+    });
+    setEvBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Evidência registrada");
+    setEvReqId(""); setEvTitulo(""); setEvDescricao(""); setEvNota(""); setEvPeriodo(""); setEvFile(null);
+    qc.invalidateQueries({ queryKey: ["student-evidences", id] });
+  }
+
   function gerarPDF() {
     if (!aluno || !avals) return;
     exportStudentReport({
