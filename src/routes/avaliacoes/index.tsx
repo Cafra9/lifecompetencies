@@ -34,31 +34,44 @@ type Aluno = { id: string; nome: string; ano: string };
 function AvaliacoesPage() {
   const { user, loading } = useAuth();
   const [busca, setBusca] = useState("");
+  const [turmaId, setTurmaId] = useState<string>("");
   const [avaliarId, setAvaliarId] = useState<string | null>(null);
   const [relatorioId, setRelatorioId] = useState<string | null>(null);
   const [heatmapId, setHeatmapId] = useState<string | null>(null);
   const [classHeatmap, setClassHeatmap] = useState(false);
 
-  const { data: alunos = [], isLoading: alunosLoading } = useQuery({
-    queryKey: ["avaliacoes-alunos", user?.id],
+  const { data: turmas = [] } = useQuery({
+    queryKey: ["avaliacoes-turmas", user?.id],
     enabled: !!user,
-    queryFn: async (): Promise<Aluno[]> => {
-      const { data: classes } = await supabase
+    queryFn: async () => {
+      const { data } = await supabase
         .from("classes")
         .select("id, nome, arquivada")
-        .eq("arquivada", false);
-      const classMap = Object.fromEntries((classes ?? []).map((c: any) => [c.id, c.nome]));
-      const ids = Object.keys(classMap);
-      if (!ids.length) return [];
-      const { data: students } = await supabase
-        .from("students")
-        .select("id, nome, class_id")
-        .in("class_id", ids)
+        .eq("arquivada", false)
         .order("nome");
-      return (students ?? []).map((s: any) => ({
+      return (data ?? []) as { id: string; nome: string }[];
+    },
+  });
+
+  // Auto-seleciona a primeira turma assim que carregar
+  if (turmas.length && !turmaId) {
+    setTurmaId(turmas[0].id);
+  }
+
+  const { data: alunos = [], isLoading: alunosLoading } = useQuery({
+    queryKey: ["avaliacoes-alunos", turmaId],
+    enabled: !!user && !!turmaId,
+    queryFn: async (): Promise<Aluno[]> => {
+      const turma = turmas.find((t) => t.id === turmaId);
+      const { data } = await supabase
+        .from("students")
+        .select("id, nome")
+        .eq("class_id", turmaId)
+        .order("nome");
+      return (data ?? []).map((s: any) => ({
         id: s.id,
         nome: s.nome,
-        ano: classMap[s.class_id] ?? "",
+        ano: turma?.nome ?? "",
       }));
     },
   });
@@ -70,11 +83,7 @@ function AvaliacoesPage() {
     return <Navigate to="/login" search={{ redirect: "/avaliacoes" }} replace />;
   }
 
-  const filtrados = alunos.filter(
-    (a) =>
-      a.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      a.ano.toLowerCase().includes(busca.toLowerCase()),
-  );
+  const filtrados = alunos.filter((a) => a.nome.toLowerCase().includes(busca.toLowerCase()));
 
   const ativo = (id: string | null) => alunos.find((a) => a.id === id);
 
@@ -99,23 +108,29 @@ function AvaliacoesPage() {
       </div>
 
       <Card>
-        <CardContent className="p-4 flex gap-3 items-center">
-          <div className="relative flex-1">
+        <CardContent className="p-4 flex gap-3 items-center flex-wrap">
+          <select
+            value={turmaId}
+            onChange={(e) => setTurmaId(e.target.value)}
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            {turmas.length === 0 && <option value="">Nenhuma turma</option>}
+            {turmas.map((t) => (
+              <option key={t.id} value={t.id}>{t.nome}</option>
+            ))}
+          </select>
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar aluno por nome ou turma..."
+              placeholder="Buscar aluno por nome..."
               className="pl-9 bg-muted/50 border-0"
             />
           </div>
-          <Button variant="outline" className="gap-2">
-            <Filter className="h-4 w-4" />
-            Todas as áreas
-            <ChevronDown className="h-4 w-4" />
-          </Button>
         </CardContent>
       </Card>
+
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtrados.map((a) => (
