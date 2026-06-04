@@ -52,17 +52,14 @@ function TurmasPage() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!user || !editing) return;
+    const nome = editing.nome?.trim();
+    const segmento = editing.segmento as Turma["segmento"] | undefined;
+    if (!nome || !segmento) return toast.error("Nome e segmento são obrigatórios");
     setBusy(true);
-    const payload = {
-      nome: editing.nome?.trim(),
-      segmento: editing.segmento,
-      school_year_id: editing.school_year_id || null,
-      professor_id: user.id,
-    };
-    if (!payload.nome || !payload.segmento) { setBusy(false); return toast.error("Nome e segmento são obrigatórios"); }
+    const payload = { nome, segmento, school_year_id: editing.school_year_id || null, professor_id: user.id };
     const { error } = editing.id
       ? await supabase.from("classes").update(payload).eq("id", editing.id)
-      : await supabase.from("classes").insert(payload);
+      : await supabase.from("classes").insert(payload as any);
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(editing.id ? "Turma atualizada" : "Turma criada");
