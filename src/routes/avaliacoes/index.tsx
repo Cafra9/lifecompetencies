@@ -128,6 +128,15 @@ function AvaliacoesPage() {
           />
         ))}
       </div>
+      {!alunosLoading && filtrados.length === 0 && (
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            {alunos.length === 0
+              ? "Nenhum aluno cadastrado. Crie uma turma e adicione alunos em Turmas."
+              : "Nenhum aluno encontrado para a busca."}
+          </CardContent>
+        </Card>
+      )}
 
       {ativo(avaliarId) && (
         <AvaliarDialog
