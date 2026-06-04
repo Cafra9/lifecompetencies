@@ -217,3 +217,134 @@ function AlunoDetalhe() {
     </div>
   );
 }
+
+function StudentEvidencesCard({
+  studentId,
+  yearReqs,
+  evidences,
+}: {
+  studentId: string;
+  yearReqs: any[];
+  evidences: any[];
+}) {
+  const qc = useQueryClient();
+  const sb = supabase as any;
+  const { user } = useAuth();
+
+  const creatorIds = useMemo(() => [...new Set(evidences.map((e) => e.created_by).filter(Boolean))], [evidences]);
+  const { data: profs } = useQuery({
+    queryKey: ["evidence-profs", creatorIds.join(",")],
+    enabled: creatorIds.length > 0,
+    queryFn: async () => (await supabase.from("profiles").select("id, nome").in("id", creatorIds)).data ?? [],
+  });
+  const profById = useMemo(
+    () => Object.fromEntries((profs ?? []).map((p: any) => [p.id, p.nome])),
+    [profs],
+  );
+
+  const fulfilledReqIds = useMemo(
+    () => new Set(evidences.map((e) => e.requirement_id).filter(Boolean)),
+    [evidences],
+  );
+
+  async function openFile(path: string, download = false) {
+    const { data, error } = await supabase.storage
+      .from("student-evidences")
+      .createSignedUrl(path, 60 * 10, download ? { download: true } : undefined);
+    if (error || !data?.signedUrl) return toast.error("Não foi possível abrir o arquivo");
+    window.open(data.signedUrl, "_blank");
+  }
+
+  async function deleteEvidence(ev: any) {
+    if (!confirm(`Excluir "${ev.titulo}"?`)) return;
+    if (ev.arquivo_url) {
+      await supabase.storage.from("student-evidences").remove([ev.arquivo_url]);
+    }
+    const { error } = await sb.from("student_evidences").delete().eq("id", ev.id);
+    if (error) return toast.error(error.message);
+    toast.success("Evidência removida");
+    qc.invalidateQueries({ queryKey: ["student-evidences", studentId] });
+    qc.invalidateQueries({ queryKey: ["class-evidences"] });
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+        <div>
+          <CardTitle>Evidências do Aluno</CardTitle>
+          <CardDescription>Arquivos disponíveis para o relatório de Competências para a Vida</CardDescription>
+        </div>
+        <EvidenceUploadDialog
+          studentId={studentId}
+          trigger={<Button size="sm"><Plus className="h-4 w-4 mr-1" /> Adicionar Evidência</Button>}
+        />
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {yearReqs.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {yearReqs.map((yr) => {
+              const r = yr.requirement;
+              if (!r) return null;
+              const ok = fulfilledReqIds.has(r.id);
+              const obrig = yr.obrigatorio;
+              return (
+                <span
+                  key={yr.id}
+                  className={`text-xs px-2 py-1 rounded border ${
+                    ok
+                      ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:text-emerald-300"
+                      : obrig
+                        ? "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-300"
+                        : "bg-muted text-muted-foreground border-border"
+                  }`}
+                >
+                  {ok ? "✓" : obrig ? "⚠" : "○"} {r.nome}{obrig ? " *" : ""}
+                </span>
+              );
+            })}
+          </div>
+        )}
+
+        {evidences.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            Nenhuma evidência enviada ainda.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {evidences.map((e) => (
+              <div key={e.id} className="border rounded-lg p-3 text-sm flex flex-wrap items-start gap-3 justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium">{e.titulo}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-x-2">
+                    <span className="capitalize">{String(e.evidence_type).replace(/_/g, " ")}</span>
+                    <span>· {new Date(e.created_at).toLocaleDateString("pt-BR")}</span>
+                    {profById[e.created_by] && <span>· {profById[e.created_by]}</span>}
+                    {e.periodo && <span>· {e.periodo}</span>}
+                  </div>
+                  {e.descricao && <div className="text-xs text-muted-foreground mt-1">{e.descricao}</div>}
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {e.arquivo_url && (
+                    <>
+                      <Button size="icon" variant="ghost" onClick={() => openFile(e.arquivo_url)} title="Visualizar">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => openFile(e.arquivo_url, true)} title="Baixar">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                  {(e.created_by === user?.id) && (
+                    <Button size="icon" variant="ghost" onClick={() => deleteEvidence(e)} title="Excluir">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
