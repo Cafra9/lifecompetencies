@@ -20,6 +20,7 @@ function TurmaDetalhe() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const sb = supabase as any;
   const { data: turma } = useQuery({
     queryKey: ["class", id],
     queryFn: async () => (await supabase.from("classes").select("*").eq("id", id).maybeSingle()).data,
@@ -28,6 +29,30 @@ function TurmaDetalhe() {
     queryKey: ["students", id],
     queryFn: async () => (await supabase.from("students").select("*").eq("class_id", id).order("nome")).data ?? [],
   });
+  const { data: year } = useQuery({
+    queryKey: ["class-year", (turma as any)?.school_year_id],
+    enabled: !!(turma as any)?.school_year_id,
+    queryFn: async () =>
+      (await sb.from("school_years").select("*").eq("id", (turma as any).school_year_id).maybeSingle()).data,
+  });
+  const { data: cts } = useQuery({
+    queryKey: ["class-teachers", id],
+    queryFn: async () => (await sb.from("class_teachers").select("*").eq("class_id", id)).data ?? [],
+  });
+  const teacherIds = useMemo(() => {
+    const ids = new Set<string>();
+    const t: any = turma;
+    if (t?.professor_regente_id) ids.add(t.professor_regente_id);
+    if (t?.professor_id) ids.add(t.professor_id);
+    (cts ?? []).forEach((c: any) => ids.add(c.user_id));
+    return [...ids];
+  }, [turma, cts]);
+  const { data: profs } = useQuery({
+    queryKey: ["profs", teacherIds.join(",")],
+    enabled: teacherIds.length > 0,
+    queryFn: async () => (await supabase.from("profiles").select("id, nome").in("id", teacherIds)).data ?? [],
+  });
+  const profById = useMemo(() => Object.fromEntries((profs ?? []).map((p: any) => [p.id, p.nome])), [profs]);
 
   async function addAluno(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
