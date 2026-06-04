@@ -92,28 +92,69 @@ export type Database = {
         }
         Relationships: []
       }
-      classes: {
+      class_teachers: {
         Row: {
+          class_id: string
           created_at: string
           id: string
+          papel: string | null
+          user_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          papel?: string | null
+          user_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          papel?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_teachers_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          arquivada: boolean
+          created_at: string
+          id: string
+          letra: string | null
           nome: string
           professor_id: string
+          professor_regente_id: string | null
           school_year_id: string | null
           segmento: Database["public"]["Enums"]["school_segment"]
         }
         Insert: {
+          arquivada?: boolean
           created_at?: string
           id?: string
+          letra?: string | null
           nome: string
           professor_id: string
+          professor_regente_id?: string | null
           school_year_id?: string | null
           segmento: Database["public"]["Enums"]["school_segment"]
         }
         Update: {
+          arquivada?: boolean
           created_at?: string
           id?: string
+          letra?: string | null
           nome?: string
           professor_id?: string
+          professor_regente_id?: string | null
           school_year_id?: string | null
           segmento?: Database["public"]["Enums"]["school_segment"]
         }
@@ -975,6 +1016,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_class_teacher: {
+        Args: { _class_id: string; _user_id: string }
         Returns: boolean
       }
       is_coordinator_of_segment: {
