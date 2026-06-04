@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { SEGMENT_LABEL } from "@/lib/competencies";
-import { Plus, ArrowLeft, Trash2, ClipboardCheck, User as UserIcon } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, ClipboardCheck, User as UserIcon, FileUp } from "lucide-react";
 import { toast } from "sonner";
+import { EvidenceUploadDialog } from "@/components/EvidenceUploadDialog";
 
 export const Route = createFileRoute("/turmas/$id")({ component: () => <AppLayout><TurmaDetalhe /></AppLayout> });
 
