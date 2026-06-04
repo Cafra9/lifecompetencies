@@ -1,7 +1,9 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -27,16 +29,7 @@ export const Route = createFileRoute("/avaliacoes/")({
   component: AvaliacoesPage,
 });
 
-const alunos = [
-  { id: "joao-pedro", nome: "João Pedro", ano: "Infantil 5" },
-  { id: "maria-eduarda", nome: "Maria Eduarda", ano: "Infantil 5" },
-  { id: "lucas-almeida", nome: "Lucas Almeida", ano: "Infantil 4" },
-  { id: "ana-carolina", nome: "Ana Carolina", ano: "Infantil 4" },
-  { id: "gabriel-costa", nome: "Gabriel Costa", ano: "Infantil 5" },
-  { id: "julia-martins", nome: "Julia Martins", ano: "Infantil 5" },
-  { id: "pedro-henrique", nome: "Pedro Henrique", ano: "Infantil 4" },
-  { id: "beatriz-lima", nome: "Beatriz Lima", ano: "Infantil 5" },
-];
+type Aluno = { id: string; nome: string; ano: string };
 
 function AvaliacoesPage() {
   const { user, loading } = useAuth();
@@ -45,6 +38,30 @@ function AvaliacoesPage() {
   const [relatorioId, setRelatorioId] = useState<string | null>(null);
   const [heatmapId, setHeatmapId] = useState<string | null>(null);
   const [classHeatmap, setClassHeatmap] = useState(false);
+
+  const { data: alunos = [], isLoading: alunosLoading } = useQuery({
+    queryKey: ["avaliacoes-alunos", user?.id],
+    enabled: !!user,
+    queryFn: async (): Promise<Aluno[]> => {
+      const { data: classes } = await supabase
+        .from("classes")
+        .select("id, nome, arquivada")
+        .eq("arquivada", false);
+      const classMap = Object.fromEntries((classes ?? []).map((c: any) => [c.id, c.nome]));
+      const ids = Object.keys(classMap);
+      if (!ids.length) return [];
+      const { data: students } = await supabase
+        .from("students")
+        .select("id, nome, class_id")
+        .in("class_id", ids)
+        .order("nome");
+      return (students ?? []).map((s: any) => ({
+        id: s.id,
+        nome: s.nome,
+        ano: classMap[s.class_id] ?? "",
+      }));
+    },
+  });
 
   if (loading) {
     return <div className="py-16 text-center text-sm text-muted-foreground">Carregando…</div>;
