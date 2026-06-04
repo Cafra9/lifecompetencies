@@ -17,6 +17,7 @@ import { Route as RelatoriosIndexRouteImport } from './routes/relatorios/index'
 import { Route as PlanosIndexRouteImport } from './routes/planos/index'
 import { Route as PerfilIndexRouteImport } from './routes/perfil/index'
 import { Route as FormacaoIndexRouteImport } from './routes/formacao/index'
+import { Route as ConfiguracoesIndexRouteImport } from './routes/configuracoes/index'
 import { Route as BibliotecaIndexRouteImport } from './routes/biblioteca/index'
 import { Route as AvaliacoesIndexRouteImport } from './routes/avaliacoes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
@@ -24,6 +25,7 @@ import { Route as TurmasIdRouteImport } from './routes/turmas/$id'
 import { Route as FormacaoSlugRouteImport } from './routes/formacao/$slug'
 import { Route as AvaliacoesRubricaRouteImport } from './routes/avaliacoes/rubrica'
 import { Route as AlunosIdRouteImport } from './routes/alunos/$id'
+import { Route as RelatoriosAlunoIdRouteImport } from './routes/relatorios/aluno/$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -65,6 +67,11 @@ const FormacaoIndexRoute = FormacaoIndexRouteImport.update({
   path: '/formacao/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConfiguracoesIndexRoute = ConfiguracoesIndexRouteImport.update({
+  id: '/configuracoes/',
+  path: '/configuracoes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BibliotecaIndexRoute = BibliotecaIndexRouteImport.update({
   id: '/biblioteca/',
   path: '/biblioteca/',
@@ -100,6 +107,11 @@ const AlunosIdRoute = AlunosIdRouteImport.update({
   path: '/alunos/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RelatoriosAlunoIdRoute = RelatoriosAlunoIdRouteImport.update({
+  id: '/relatorios/aluno/$id',
+  path: '/relatorios/aluno/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -112,11 +124,13 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/avaliacoes/': typeof AvaliacoesIndexRoute
   '/biblioteca/': typeof BibliotecaIndexRoute
+  '/configuracoes/': typeof ConfiguracoesIndexRoute
   '/formacao/': typeof FormacaoIndexRoute
   '/perfil/': typeof PerfilIndexRoute
   '/planos/': typeof PlanosIndexRoute
   '/relatorios/': typeof RelatoriosIndexRoute
   '/turmas/': typeof TurmasIndexRoute
+  '/relatorios/aluno/$id': typeof RelatoriosAlunoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -129,11 +143,13 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/avaliacoes': typeof AvaliacoesIndexRoute
   '/biblioteca': typeof BibliotecaIndexRoute
+  '/configuracoes': typeof ConfiguracoesIndexRoute
   '/formacao': typeof FormacaoIndexRoute
   '/perfil': typeof PerfilIndexRoute
   '/planos': typeof PlanosIndexRoute
   '/relatorios': typeof RelatoriosIndexRoute
   '/turmas': typeof TurmasIndexRoute
+  '/relatorios/aluno/$id': typeof RelatoriosAlunoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -147,11 +163,13 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/avaliacoes/': typeof AvaliacoesIndexRoute
   '/biblioteca/': typeof BibliotecaIndexRoute
+  '/configuracoes/': typeof ConfiguracoesIndexRoute
   '/formacao/': typeof FormacaoIndexRoute
   '/perfil/': typeof PerfilIndexRoute
   '/planos/': typeof PlanosIndexRoute
   '/relatorios/': typeof RelatoriosIndexRoute
   '/turmas/': typeof TurmasIndexRoute
+  '/relatorios/aluno/$id': typeof RelatoriosAlunoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -166,11 +184,13 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/avaliacoes/'
     | '/biblioteca/'
+    | '/configuracoes/'
     | '/formacao/'
     | '/perfil/'
     | '/planos/'
     | '/relatorios/'
     | '/turmas/'
+    | '/relatorios/aluno/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -183,11 +203,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/avaliacoes'
     | '/biblioteca'
+    | '/configuracoes'
     | '/formacao'
     | '/perfil'
     | '/planos'
     | '/relatorios'
     | '/turmas'
+    | '/relatorios/aluno/$id'
   id:
     | '__root__'
     | '/'
@@ -200,11 +222,13 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/avaliacoes/'
     | '/biblioteca/'
+    | '/configuracoes/'
     | '/formacao/'
     | '/perfil/'
     | '/planos/'
     | '/relatorios/'
     | '/turmas/'
+    | '/relatorios/aluno/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -218,11 +242,13 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   AvaliacoesIndexRoute: typeof AvaliacoesIndexRoute
   BibliotecaIndexRoute: typeof BibliotecaIndexRoute
+  ConfiguracoesIndexRoute: typeof ConfiguracoesIndexRoute
   FormacaoIndexRoute: typeof FormacaoIndexRoute
   PerfilIndexRoute: typeof PerfilIndexRoute
   PlanosIndexRoute: typeof PlanosIndexRoute
   RelatoriosIndexRoute: typeof RelatoriosIndexRoute
   TurmasIndexRoute: typeof TurmasIndexRoute
+  RelatoriosAlunoIdRoute: typeof RelatoriosAlunoIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -283,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FormacaoIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/configuracoes/': {
+      id: '/configuracoes/'
+      path: '/configuracoes'
+      fullPath: '/configuracoes/'
+      preLoaderRoute: typeof ConfiguracoesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/biblioteca/': {
       id: '/biblioteca/'
       path: '/biblioteca'
@@ -332,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlunosIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/relatorios/aluno/$id': {
+      id: '/relatorios/aluno/$id'
+      path: '/relatorios/aluno/$id'
+      fullPath: '/relatorios/aluno/$id'
+      preLoaderRoute: typeof RelatoriosAlunoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -346,11 +386,13 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   AvaliacoesIndexRoute: AvaliacoesIndexRoute,
   BibliotecaIndexRoute: BibliotecaIndexRoute,
+  ConfiguracoesIndexRoute: ConfiguracoesIndexRoute,
   FormacaoIndexRoute: FormacaoIndexRoute,
   PerfilIndexRoute: PerfilIndexRoute,
   PlanosIndexRoute: PlanosIndexRoute,
   RelatoriosIndexRoute: RelatoriosIndexRoute,
   TurmasIndexRoute: TurmasIndexRoute,
+  RelatoriosAlunoIdRoute: RelatoriosAlunoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

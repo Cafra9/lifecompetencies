@@ -1,11 +1,11 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutGrid, ClipboardCheck, Library, Users2, LogOut } from "lucide-react";
+import { LayoutGrid, ClipboardCheck, Library, Users2, LogOut, Settings } from "lucide-react";
 import frameworkIcon from "@/assets/framework.png";
 import aubrickLogo from "@/assets/aubrick-isp-logo.jpg";
 import type { ReactNode } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, useCanConfigure } from "@/hooks/useAuth";
 
-const nav = [
+const baseNav = [
   { to: "/", label: "Dashboard", icon: LayoutGrid },
   { to: "/avaliacoes", label: "Avaliações", icon: ClipboardCheck },
   { to: "/biblioteca", label: "Biblioteca", icon: Library },
@@ -15,6 +15,10 @@ const nav = [
 export function AppLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { user, signOut } = useAuth();
+  const canConfigure = useCanConfigure();
+  const nav = canConfigure
+    ? [...baseNav, { to: "/configuracoes", label: "Configurações", icon: Settings }]
+    : baseNav;
   const navigate = useNavigate();
   const displayName =
     (user?.user_metadata?.nome as string | undefined) ||
