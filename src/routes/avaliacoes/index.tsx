@@ -227,8 +227,14 @@ function AlunoCard({
       setFechadoStatus(false);
       toast.success("Avaliação reaberta para edição.");
     } else {
-      if (c.total === 0) {
+      if (c.cobertas === 0) {
         toast.error("Registre ao menos uma habilidade antes de fechar.");
+        return;
+      }
+      if (c.cobertas < 15) {
+        toast.error(
+          `Cubra todas as 15 habilidades (avaliando ou marcando como N/A) antes de fechar. Faltam ${15 - c.cobertas}.`,
+        );
         return;
       }
       const ok = window.confirm(
