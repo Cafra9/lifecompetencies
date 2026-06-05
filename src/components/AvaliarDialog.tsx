@@ -247,33 +247,13 @@ export function AvaliarDialog({
                         </div>
 
                         <AccordionContent className="px-3 pb-3 space-y-3">
-                          {/* Barra compacta com todas as opções no topo — sempre acima da dobra */}
+                          {/* Botão único "Não se aplica" — seleção de nível ocorre clicando nos cards abaixo */}
                           <div className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 -mx-3 px-3 pt-1 pb-2 border-b">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                              {NIVEIS.map((n) => {
-                                const selected = cur === n;
-                                return (
-                                  <button
-                                    key={n}
-                                    type="button"
-                                    onClick={() => setNivel(c.competencia, h.habilidade, n)}
-                                    className={`rounded-md border px-2 py-2 text-xs font-semibold uppercase tracking-wide transition-colors hover:brightness-95 ${
-                                      selected
-                                        ? `${NIVEL_CELL[n]} border-transparent ring-2 ring-offset-1 ring-foreground/20`
-                                        : "bg-card border-border"
-                                    }`}
-                                  >
-                                    <span className="inline-flex items-center justify-center gap-1">
-                                      {NIVEL_LABEL[n]}
-                                      {selected && <Check className="h-3.5 w-3.5" />}
-                                    </span>
-                                  </button>
-                                );
-                              })}
+                            <div className="flex justify-end">
                               <button
                                 type="button"
                                 onClick={() => setNivel(c.competencia, h.habilidade, "nao_aplica")}
-                                className={`rounded-md border border-dashed px-2 py-2 text-xs font-semibold uppercase tracking-wide transition-colors hover:bg-muted/60 ${
+                                className={`rounded-md border border-dashed px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors hover:bg-muted/60 ${
                                   cur === "nao_aplica"
                                     ? "bg-muted ring-2 ring-offset-1 ring-foreground/20"
                                     : "bg-card text-muted-foreground"
