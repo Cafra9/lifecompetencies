@@ -1004,6 +1004,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_class_segment: {
+        Args: { _class_id: string }
+        Returns: Database["public"]["Enums"]["school_segment"]
+      }
       has_any_role: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]
