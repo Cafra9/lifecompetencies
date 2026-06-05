@@ -716,7 +716,7 @@ export function RelatorioDialog({
             Relatório · {alunoNome}
           </DialogTitle>
           <DialogDescription>
-            Gerado por IA com base nas avaliações e nas observações do(a) professor(a). Selecione um trecho e clique em <strong>Regerar</strong> para reescrever apenas a seleção.
+            {texto ? fontesTexto : "Gerado por IA com base nas rubricas avaliadas, observações dos professores, Bases de Conhecimento do ano e nas evidências anexadas ao aluno. Selecione um trecho e clique em Regerar para reescrever apenas a seleção."}
           </DialogDescription>
         </DialogHeader>
 
