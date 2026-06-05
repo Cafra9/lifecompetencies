@@ -139,15 +139,28 @@ export function AvaliarDialog({
   const allAnswered = preenchidos + naAplica >= total;
 
   function scrollToKey(k: string) {
-    // Aguarda o Accordion abrir antes de calcular a posição.
-    setTimeout(() => {
+    const OFFSET_TOP = 32;
+    const SETTLE_MS = 260;
+
+    const align = (behavior: ScrollBehavior) => {
       const el = itemRefs.current[k];
       const scroller = scrollerRef.current;
       if (!el || !scroller) return;
       const elTop = el.getBoundingClientRect().top;
       const scTop = scroller.getBoundingClientRect().top;
-      scroller.scrollBy({ top: elTop - scTop - 8, behavior: "smooth" });
-    }, 140);
+      const targetTop = scroller.scrollTop + elTop - scTop - OFFSET_TOP;
+      scroller.scrollTo({ top: Math.max(0, targetTop), behavior });
+    };
+
+    // Aguarda o Accordion recolher/expandir antes de calcular a posição final.
+    setTimeout(() => requestAnimationFrame(() => align("smooth")), SETTLE_MS);
+    setTimeout(() => {
+      const el = itemRefs.current[k];
+      const scroller = scrollerRef.current;
+      if (!el || !scroller) return;
+      const relativeTop = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+      if (relativeTop < 20 || relativeTop > 56) align("auto");
+    }, SETTLE_MS + 360);
   }
 
   function advanceFrom(currentKey: string) {
