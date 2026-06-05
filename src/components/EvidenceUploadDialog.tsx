@@ -95,17 +95,26 @@ export function EvidenceUploadDialog({ studentId, trigger, defaultRequirementId 
       <DialogContent>
         <DialogHeader><DialogTitle>Adicionar evidência</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-3">
-          <div>
-            <Label>Categoria</Label>
-            <Select value={requirementId} onValueChange={setRequirementId}>
-              <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
-              <SelectContent>
-                {(requirements as any[] | undefined)?.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {defaultRequirementId ? (
+            selectedReq ? (
+              <div className="text-sm">
+                <Label className="text-muted-foreground">Categoria</Label>
+                <div className="font-medium">{selectedReq.nome}</div>
+              </div>
+            ) : null
+          ) : (
+            <div>
+              <Label>Categoria</Label>
+              <Select value={requirementId} onValueChange={setRequirementId}>
+                <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+                <SelectContent>
+                  {(requirements as any[] | undefined)?.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div>
             <Label>Título</Label>
             <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} required maxLength={200} />

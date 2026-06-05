@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,18 +11,41 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Trash2, Paperclip, Eye } from "lucide-react";
+import {
+  Download,
+  Trash2,
+  Paperclip,
+  Eye,
+  CheckCircle2,
+  Circle,
+  Plus,
+} from "lucide-react";
 import { toast } from "sonner";
 import { EvidenceUploadDialog } from "./EvidenceUploadDialog";
+
+export type RequirementItem = {
+  id: string;
+  nome: string;
+  orientacao?: string | null;
+  obrigatorio?: boolean;
+  allowed_extensions?: string[];
+};
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   studentId: string;
   studentName: string;
+  requirements?: RequirementItem[];
 }
 
-export function EvidencesDialog({ open, onOpenChange, studentId, studentName }: Props) {
+export function EvidencesDialog({
+  open,
+  onOpenChange,
+  studentId,
+  studentName,
+  requirements = [],
+}: Props) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const sb = supabase as any;
@@ -32,7 +56,9 @@ export function EvidencesDialog({ open, onOpenChange, studentId, studentName }: 
     queryFn: async () => {
       const { data } = await sb
         .from("student_evidences")
-        .select("id, titulo, descricao, periodo, arquivo_url, created_at, created_by, requirement_id, evidence_type")
+        .select(
+          "id, titulo, descricao, periodo, arquivo_url, created_at, created_by, requirement_id, evidence_type",
+        )
         .eq("student_id", studentId)
         .order("created_at", { ascending: false });
       const rows = (data ?? []) as any[];
@@ -55,6 +81,22 @@ export function EvidencesDialog({ open, onOpenChange, studentId, studentName }: 
       }));
     },
   });
+
+  const byReq = useMemo(() => {
+    const map = new Map<string, any[]>();
+    (items as any[]).forEach((it) => {
+      const k = it.requirement_id ?? "__sem__";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(it);
+    });
+    return map;
+  }, [items]);
+
+  const requiredIds = new Set(requirements.map((r) => r.id));
+  const fulfilled = requirements.filter((r) => (byReq.get(r.id)?.length ?? 0) > 0).length;
+  const orphan = (items as any[]).filter(
+    (it) => !it.requirement_id || !requiredIds.has(it.requirement_id),
+  );
 
   async function abrir(path: string | null) {
     if (!path) return;
@@ -83,7 +125,43 @@ export function EvidencesDialog({ open, onOpenChange, studentId, studentName }: 
     if (error) return toast.error(error.message);
     toast.success("Evidência excluída");
     qc.invalidateQueries({ queryKey: ["student-evidences", studentId] });
-    qc.invalidateQueries({ queryKey: ["student-evidences-count", studentId] });
+    qc.invalidateQueries({ queryKey: ["student-evidences-progress", studentId] });
+  }
+
+  function ItemCard({ it }: { it: any }) {
+    return (
+      <div className="border rounded-md p-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="font-medium truncate">{it.titulo}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {it.professor_nome} · {new Date(it.created_at).toLocaleDateString("pt-BR")}
+              {it.periodo ? ` · ${it.periodo}` : ""}
+            </div>
+            {it.descricao && (
+              <p className="text-sm mt-2 whitespace-pre-wrap">{it.descricao}</p>
+            )}
+          </div>
+          <div className="flex gap-1 shrink-0">
+            {it.arquivo_url && (
+              <>
+                <Button size="icon" variant="ghost" onClick={() => abrir(it.arquivo_url)} title="Visualizar">
+                  <Eye className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="ghost" onClick={() => baixar(it.arquivo_url, it.titulo)} title="Baixar">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            {it.created_by === user?.id && (
+              <Button size="icon" variant="ghost" onClick={() => excluir(it)} title="Excluir">
+                <Trash2 className="h-4 w-4 text-red-600" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -94,65 +172,99 @@ export function EvidencesDialog({ open, onOpenChange, studentId, studentName }: 
             <Paperclip className="h-5 w-5" /> Evidências — {studentName}
           </DialogTitle>
           <DialogDescription>
-            Anexe portfólios, rubricas, observações, produções e demais evidências usadas no relatório de Competências para a Vida.
+            {requirements.length > 0 ? (
+              <span>
+                Evidências exigidas para esta turma:{" "}
+                <strong>
+                  {fulfilled}/{requirements.length}
+                </strong>{" "}
+                atendidas.
+              </span>
+            ) : (
+              <span>
+                Nenhuma evidência foi definida para esta turma. Configure os requisitos em Configurações → Requisitos por ano.
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex justify-end">
-          <EvidenceUploadDialog
-            studentId={studentId}
-            trigger={
-              <Button size="sm" className="gap-2">
-                <Paperclip className="h-4 w-4" /> Adicionar Evidência
-              </Button>
-            }
-          />
-        </div>
-
         {isLoading ? (
           <p className="text-sm text-muted-foreground py-6 text-center">Carregando…</p>
-        ) : items.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-10 text-center">
-            Nenhuma evidência cadastrada ainda.
-          </p>
         ) : (
-          <div className="space-y-2">
-            {items.map((it: any) => (
-              <div key={it.id} className="border rounded-lg p-3 space-y-2">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="secondary" className="text-xs">{it.tipo_nome}</Badge>
-                      <span className="font-medium truncate">{it.titulo}</span>
+          <div className="space-y-4">
+            {requirements.map((req) => {
+              const evs = byReq.get(req.id) ?? [];
+              const done = evs.length > 0;
+              return (
+                <div key={req.id} className="border rounded-lg p-3 space-y-3">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="flex items-start gap-2 min-w-0">
+                      {done ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">{req.nome}</span>
+                          {req.obrigatorio === false ? (
+                            <Badge variant="outline" className="text-[10px]">Opcional</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-[10px]">Obrigatório</Badge>
+                          )}
+                          <Badge variant="outline" className="text-[10px]">
+                            {evs.length} {evs.length === 1 ? "envio" : "envios"}
+                          </Badge>
+                        </div>
+                        {req.orientacao && (
+                          <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">
+                            {req.orientacao}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {it.professor_nome} · {new Date(it.created_at).toLocaleDateString("pt-BR")}
-                      {it.periodo ? ` · ${it.periodo}` : ""}
+                    <EvidenceUploadDialog
+                      studentId={studentId}
+                      defaultRequirementId={req.id}
+                      trigger={
+                        <Button size="sm" variant="outline" className="gap-1 shrink-0">
+                          <Plus className="h-4 w-4" /> Adicionar
+                        </Button>
+                      }
+                    />
+                  </div>
+
+                  {evs.length > 0 && (
+                    <div className="space-y-2 pl-7">
+                      {evs.map((it) => <ItemCard key={it.id} it={it} />)}
                     </div>
-                    {it.descricao && (
-                      <p className="text-sm mt-2 whitespace-pre-wrap">{it.descricao}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    {it.arquivo_url && (
-                      <>
-                        <Button size="icon" variant="ghost" onClick={() => abrir(it.arquivo_url)} title="Visualizar">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" onClick={() => baixar(it.arquivo_url, it.titulo)} title="Baixar">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                    {it.created_by === user?.id && (
-                      <Button size="icon" variant="ghost" onClick={() => excluir(it)} title="Excluir">
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </Button>
-                    )}
-                  </div>
+                  )}
                 </div>
+              );
+            })}
+
+            {orphan.length > 0 && (
+              <div className="border rounded-lg p-3 space-y-2">
+                <div className="font-medium text-sm">Outras evidências</div>
+                <p className="text-xs text-muted-foreground">
+                  Evidências sem categoria ou cuja categoria não faz parte dos requisitos atuais da turma.
+                </p>
+                {orphan.map((it: any) => (
+                  <div key={it.id}>
+                    <div className="text-xs text-muted-foreground mb-1">
+                      <Badge variant="secondary" className="text-[10px] mr-2">{it.tipo_nome}</Badge>
+                    </div>
+                    <ItemCard it={it} />
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
+
+            {requirements.length === 0 && orphan.length === 0 && (
+              <p className="text-sm text-muted-foreground py-10 text-center">
+                Nenhuma evidência cadastrada ainda.
+              </p>
+            )}
           </div>
         )}
       </DialogContent>
@@ -160,17 +272,22 @@ export function EvidencesDialog({ open, onOpenChange, studentId, studentName }: 
   );
 }
 
-export function useEvidenceCount(studentId: string) {
+export function useEvidenceProgress(studentId: string, requiredIds: string[]) {
   const sb = supabase as any;
+  const key = requiredIds.slice().sort().join(",");
   return useQuery({
-    queryKey: ["student-evidences-count", studentId],
+    queryKey: ["student-evidences-progress", studentId, key],
     enabled: !!studentId,
     queryFn: async () => {
-      const { count } = await sb
+      const { data } = await sb
         .from("student_evidences")
-        .select("id", { count: "exact", head: true })
+        .select("requirement_id")
         .eq("student_id", studentId);
-      return count ?? 0;
+      const have = new Set(
+        ((data ?? []) as any[]).map((r) => r.requirement_id).filter(Boolean),
+      );
+      const fulfilled = requiredIds.filter((id) => have.has(id)).length;
+      return { fulfilled, total: requiredIds.length };
     },
   });
 }

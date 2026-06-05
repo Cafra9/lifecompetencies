@@ -22,7 +22,7 @@ import {
 import { AvaliarDialog, RelatorioDialog } from "@/components/AvaliarDialog";
 import { HeatmapDialog } from "@/components/HeatmapDialog";
 import { ClassHeatmapDialog } from "@/components/ClassHeatmapDialog";
-import { EvidencesDialog, useEvidenceCount } from "@/components/EvidencesDialog";
+import { EvidencesDialog, useEvidenceProgress, type RequirementItem } from "@/components/EvidencesDialog";
 import { Paperclip } from "lucide-react";
 import { useAllAssessments, countByLevel, useStudentAssessment } from "@/lib/assessments-store";
 import { toast } from "sonner";
@@ -49,10 +49,37 @@ function AvaliacoesPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("classes")
-        .select("id, nome, arquivada")
+        .select("id, nome, arquivada, school_year_id")
         .eq("arquivada", false)
         .order("nome");
-      return (data ?? []) as { id: string; nome: string }[];
+      return (data ?? []) as { id: string; nome: string; school_year_id: string | null }[];
+    },
+  });
+
+  const turma = turmas.find((t) => t.id === turmaId);
+  const schoolYearId = turma?.school_year_id ?? null;
+
+  const { data: requirements = [] } = useQuery<RequirementItem[]>({
+    queryKey: ["turma-requirements", schoolYearId],
+    enabled: !!schoolYearId,
+    queryFn: async () => {
+      const sb = supabase as any;
+      const { data } = await sb
+        .from("year_requirements")
+        .select("obrigatorio, orientacao, requirement:evidence_requirements(id, nome, ordem, ativo, allowed_extensions)")
+        .eq("school_year_id", schoolYearId);
+      const rows = (data ?? []) as any[];
+      return rows
+        .filter((r) => r.requirement?.ativo !== false)
+        .map((r) => ({
+          id: r.requirement.id,
+          nome: r.requirement.nome,
+          obrigatorio: r.obrigatorio,
+          orientacao: r.orientacao,
+          allowed_extensions: r.requirement.allowed_extensions,
+          _ordem: r.requirement.ordem ?? 0,
+        }))
+        .sort((a, b) => a._ordem - b._ordem || a.nome.localeCompare(b.nome));
     },
   });
 
@@ -140,6 +167,7 @@ function AvaliacoesPage() {
           <AlunoCard
             key={a.id}
             aluno={a}
+            requirements={requirements}
             onAvaliar={() => setAvaliarId(a.id)}
             onRelatorio={() => setRelatorioId(a.id)}
             onHeatmap={() => setHeatmapId(a.id)}
@@ -163,6 +191,7 @@ function AvaliacoesPage() {
           onOpenChange={(v) => !v && setEvidencesId(null)}
           studentId={ativo(evidencesId)!.id}
           studentName={ativo(evidencesId)!.nome}
+          requirements={requirements}
         />
       )}
 
@@ -206,12 +235,14 @@ function AvaliacoesPage() {
 
 function AlunoCard({
   aluno,
+  requirements,
   onAvaliar,
   onRelatorio,
   onHeatmap,
   onEvidences,
 }: {
   aluno: { id: string; nome: string; ano: string };
+  requirements: RequirementItem[];
   onAvaliar: () => void;
   onRelatorio: () => void;
   onHeatmap: () => void;
@@ -219,7 +250,10 @@ function AlunoCard({
 }) {
   const { data, fechado, setFechadoStatus } = useStudentAssessment(aluno.id);
   const c = countByLevel(data);
-  const { data: evidenceCount = 0 } = useEvidenceCount(aluno.id);
+  const requiredIds = requirements.map((r) => r.id);
+  const { data: progress } = useEvidenceProgress(aluno.id, requiredIds);
+  const total = progress?.total ?? requiredIds.length;
+  const fulfilled = progress?.fulfilled ?? 0;
 
 
   function toggleFechado() {
@@ -300,7 +334,7 @@ function AlunoCard({
             onClick={onEvidences}
           >
             <Paperclip className="h-4 w-4" />
-            Evidências ({evidenceCount})
+            Evidências{total > 0 ? ` (${fulfilled}/${total})` : ""}
           </Button>
         </div>
 
