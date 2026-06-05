@@ -268,7 +268,7 @@ function AlunoCard({
           <Row label={<span className="text-green-500">Iniciando</span>} value={c.iniciando} />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <Button
             variant="outline"
             className="w-full gap-2"
@@ -286,6 +286,14 @@ function AlunoCard({
           >
             <FileText className="h-4 w-4" />
             Relatório
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full gap-2"
+            onClick={onEvidences}
+          >
+            <Paperclip className="h-4 w-4" />
+            Evidências ({evidenceCount})
           </Button>
         </div>
 
