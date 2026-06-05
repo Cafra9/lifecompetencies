@@ -640,6 +640,7 @@ export function RelatorioDialog({
             arquivo: e.arquivo,
             storagePath: e.storagePath,
           })),
+          tom,
         },
       });
       setTemObservacao(!!observacao.trim());
