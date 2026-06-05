@@ -202,12 +202,13 @@ function EditDialog({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (!open) return;
     setTitulo(item?.titulo ?? "");
     setDescricao(item?.descricao ?? "");
     setConteudo(item?.conteudo ?? "");
     setAtivo(item?.ativo ?? true);
     setYearIds(item?.year_ids ?? []);
-  }, [item?.id]);
+  }, [item?.id, open]);
 
   function toggleYear(id: string) {
     setYearIds((prev) => prev.includes(id) ? prev.filter((y) => y !== id) : [...prev, id]);
