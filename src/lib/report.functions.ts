@@ -8,6 +8,11 @@ const AvaliacaoSchema = z.object({
   justificativa: z.string().max(500).optional(),
 });
 
+const KnowledgeBaseSchema = z.object({
+  titulo: z.string().min(1).max(200),
+  conteudo: z.string().min(1).max(8000),
+});
+
 const FullInputSchema = z.object({
   mode: z.literal("full"),
   alunoNome: z.string().min(1).max(120),
@@ -15,6 +20,7 @@ const FullInputSchema = z.object({
   segmentoLabel: z.string().min(1).max(80),
   observacaoProfessor: z.string().max(4000).optional().default(""),
   avaliacoes: z.array(AvaliacaoSchema).min(1).max(50),
+  basesConhecimento: z.array(KnowledgeBaseSchema).max(20).optional().default([]),
 });
 
 const RewriteInputSchema = z.object({
