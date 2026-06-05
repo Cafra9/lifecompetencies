@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import type { NivelOuNA } from "@/lib/rubrica-infantil";
+import type { Nivel, NivelOuNA } from "@/lib/rubrica-infantil";
 
 export type AssessmentMap = Record<string, NivelOuNA>; // `${competencia}::${habilidade}` -> nivel
 export type JustificativaMap = Record<string, string>; // mesma chave -> justificativa (apenas para nao_aplica)
+type DbNivel = Nivel | "not_applicable";
 
 export interface StudentAssessment {
   alunoId: string;
@@ -25,6 +26,15 @@ const EMPTY: StudentAssessment = {
   fechado: false,
 };
 
+function fromDbNivel(nivel: string): NivelOuNA {
+  if (nivel === "not_applicable" || nivel === "nao_aplica") return "nao_aplica";
+  return nivel as NivelOuNA;
+}
+
+function toDbNivel(nivel: NivelOuNA): DbNivel {
+  return nivel === "nao_aplica" ? "not_applicable" : nivel;
+}
+
 function rowsToMaps(
   rows: { competencia: string; habilidade: string; nivel: string; justificativa?: string | null }[],
 ): { av: AssessmentMap; just: JustificativaMap } {
@@ -32,7 +42,7 @@ function rowsToMaps(
   const just: JustificativaMap = {};
   for (const r of rows) {
     const k = `${r.competencia}::${r.habilidade}`;
-    av[k] = r.nivel as NivelOuNA;
+    av[k] = fromDbNivel(r.nivel);
     if (r.justificativa) just[k] = r.justificativa;
   }
   return { av, just };
@@ -89,7 +99,7 @@ async function fetchAll(userId: string): Promise<Record<string, StudentAssessmen
         fechado: false,
       };
     const k = `${r.competencia}::${r.habilidade}`;
-    out[r.aluno_id].avaliacoes[k] = r.nivel;
+    out[r.aluno_id].avaliacoes[k] = fromDbNivel(r.nivel);
     if (r.justificativa) out[r.aluno_id].justificativas[k] = r.justificativa;
   }
   for (const m of (metas ?? []) as any[]) {
@@ -131,7 +141,14 @@ async function persist(
       const [competencia, habilidade] = k.split("::");
       const justificativa =
         nivel === "nao_aplica" ? (justificativas[k] ?? "").trim() || null : null;
-      return { user_id: userId, aluno_id: alunoId, competencia, habilidade, nivel, justificativa };
+      return {
+        user_id: userId,
+        aluno_id: alunoId,
+        competencia,
+        habilidade,
+        nivel: toDbNivel(nivel),
+        justificativa,
+      };
     });
     await supabase
       .from("student_assessments")
