@@ -150,15 +150,22 @@ export function AvaliarDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex shrink-0 items-center gap-2 text-sm">
-          <Badge variant="secondary">{preenchidos}/{total} habilidades</Badge>
-          {!fechado && (preenchidos > 0 || localObs.trim()) && (
+        <div className="flex shrink-0 items-center gap-2 text-sm flex-wrap">
+          <Badge variant="secondary">{preenchidos}/{total} avaliadas</Badge>
+          {naAplica > 0 && (
+            <Badge variant="outline" className="border-dashed">{naAplica} N/A</Badge>
+          )}
+          <span className="text-xs text-muted-foreground">
+            Cobertura: {preenchidos + naAplica}/{total}
+          </span>
+          {!fechado && (preenchidos > 0 || naAplica > 0 || localObs.trim()) && (
             <Button
               variant="ghost"
               size="sm"
               className="h-7 gap-1"
               onClick={() => {
                 setLocal({});
+                setLocalJust({});
                 setLocalObs("");
               }}
             >
