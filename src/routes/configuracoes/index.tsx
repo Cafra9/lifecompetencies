@@ -42,6 +42,12 @@ type Invitation = {
   token: string; expires_at: string; accepted_at: string | null; created_at: string;
 };
 type ProfileLite = { id: string; nome: string; email: string; cargo: string | null; ativo: boolean };
+type Turma = {
+  id: string; nome: string; segmento: SchoolSegment; school_year_id: string | null;
+  professor_id: string; professor_regente_id: string | null;
+  letra: string | null; arquivada: boolean;
+};
+type ClassTeacherRow = { id: string; class_id: string; user_id: string; papel: string | null };
 
 // ============================================================
 function ConfiguracoesPage() {
