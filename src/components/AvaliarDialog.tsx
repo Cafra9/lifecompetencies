@@ -677,6 +677,7 @@ export function RelatorioDialog({
           alunoNome,
           trecho,
           contexto: texto,
+          tom,
         },
       });
       if (res.error) {
