@@ -153,21 +153,14 @@ export function AvaliarDialog({
   function setNivel(comp: string, hab: string, nivel: NivelOuNA) {
     if (fechado) return;
     const k = key(comp, hab);
+    dirtyRef.current = true;
     setLocal((prev) => ({ ...prev, [k]: nivel }));
     // "Não se aplica" não exige justificativa — limpa qualquer texto residual.
-    if (nivel === "nao_aplica") {
-      setLocalJust((prev) => {
-        if (!(k in prev)) return prev;
-        const { [k]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      setLocalJust((prev) => {
-        if (!(k in prev)) return prev;
-        const { [k]: _, ...rest } = prev;
-        return rest;
-      });
-    }
+    setLocalJust((prev) => {
+      if (!(k in prev)) return prev;
+      const { [k]: _, ...rest } = prev;
+      return rest;
+    });
     // Avança automaticamente para a próxima habilidade.
     advanceFrom(k);
   }
