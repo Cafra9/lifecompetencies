@@ -358,7 +358,18 @@ export function AvaliarDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {fechado ? "Fechar" : "Cancelar"}
           </Button>
-          {!fechado && <Button onClick={handleSave}>Salvar avaliação</Button>}
+          {!fechado && (
+            <Button
+              onClick={handleSave}
+              className={
+                allAnswered
+                  ? "ring-2 ring-offset-2 ring-primary animate-pulse"
+                  : ""
+              }
+            >
+              {allAnswered ? "Finalizar avaliação" : "Salvar avaliação"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
