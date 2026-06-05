@@ -167,6 +167,7 @@ function AvaliacoesPage() {
           <AlunoCard
             key={a.id}
             aluno={a}
+            requirements={requirements}
             onAvaliar={() => setAvaliarId(a.id)}
             onRelatorio={() => setRelatorioId(a.id)}
             onHeatmap={() => setHeatmapId(a.id)}
@@ -190,6 +191,7 @@ function AvaliacoesPage() {
           onOpenChange={(v) => !v && setEvidencesId(null)}
           studentId={ativo(evidencesId)!.id}
           studentName={ativo(evidencesId)!.nome}
+          requirements={requirements}
         />
       )}
 
