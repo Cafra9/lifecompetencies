@@ -40,6 +40,7 @@ function AvaliacoesPage() {
   const [avaliarId, setAvaliarId] = useState<string | null>(null);
   const [relatorioId, setRelatorioId] = useState<string | null>(null);
   const [heatmapId, setHeatmapId] = useState<string | null>(null);
+  const [evidencesId, setEvidencesId] = useState<string | null>(null);
   const [classHeatmap, setClassHeatmap] = useState(false);
 
   const { data: turmas = [] } = useQuery({
