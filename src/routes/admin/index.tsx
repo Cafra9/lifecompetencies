@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, GraduationCap, Shield, FileType } from "lucide-react";
+import { Users, BookOpen, GraduationCap, Shield, FileType, Library } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
   component: () => (
@@ -21,6 +21,12 @@ export const Route = createFileRoute("/admin/")({
             title="Tipos de evidência"
             desc="Categorias e extensões aceitas no upload"
             to="/admin/tipos-evidencia"
+          />
+          <AdminCard
+            icon={Library}
+            title="Bases de Conhecimento"
+            desc="Referências personalizadas usadas pela IA nos relatórios"
+            to="/admin/bases-conhecimento"
           />
           <AdminCard icon={Shield} title="Configurações" desc="Identidade visual, segmentos e domínios" />
         </div>
