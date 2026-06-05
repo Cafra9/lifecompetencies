@@ -1,16 +1,19 @@
 // Rubrica iSP Life Competencies — Estágio 1 · Educação Infantil (4-7 anos)
 // Extraído do ISP Life Competencies Brochure (páginas 10-19)
 
-export type Nivel = "iniciando" | "desenvolvendo" | "dominando" | "nao_aplica";
+export type Nivel = "iniciando" | "desenvolvendo" | "dominando";
+export type NivelOuNA = Nivel | "nao_aplica";
 
 export const NIVEL_LABEL: Record<Nivel, string> = {
   iniciando: "Iniciando",
   desenvolvendo: "Desenvolvendo",
   dominando: "Dominando",
-  nao_aplica: "Não se aplica",
 };
 
-export const NIVEIS_PONTUAVEIS: Nivel[] = ["iniciando", "desenvolvendo", "dominando"];
+export const NIVEL_OU_NA_LABEL: Record<NivelOuNA, string> = {
+  ...NIVEL_LABEL,
+  nao_aplica: "Não se aplica",
+};
 
 export interface RubricaHabilidade {
   habilidade: string;
