@@ -5,20 +5,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RUBRICA_INFANTIL, NIVEL_LABEL, type Nivel } from "@/lib/rubrica-infantil";
+import { RUBRICA_INFANTIL, NIVEL_OU_NA_LABEL, type NivelOuNA } from "@/lib/rubrica-infantil";
 import { useStudentAssessment } from "@/lib/assessments-store";
 
-const HEAT_CELL: Record<Nivel | "vazio", string> = {
+const HEAT_CELL: Record<NivelOuNA | "vazio", string> = {
   iniciando: "bg-green-200 text-green-900",
   desenvolvendo: "bg-green-500 text-white",
   dominando: "bg-green-700 text-white",
-  vazio: "bg-muted text-muted-foreground",
+  nao_aplica: "bg-muted text-muted-foreground border border-dashed",
+  vazio: "bg-muted/40 text-muted-foreground",
 };
 
-const LEGEND: { nivel: Nivel | "vazio"; label: string }[] = [
-  { nivel: "iniciando", label: NIVEL_LABEL.iniciando },
-  { nivel: "desenvolvendo", label: NIVEL_LABEL.desenvolvendo },
-  { nivel: "dominando", label: NIVEL_LABEL.dominando },
+const LEGEND: { nivel: NivelOuNA | "vazio"; label: string }[] = [
+  { nivel: "iniciando", label: NIVEL_OU_NA_LABEL.iniciando },
+  { nivel: "desenvolvendo", label: NIVEL_OU_NA_LABEL.desenvolvendo },
+  { nivel: "dominando", label: NIVEL_OU_NA_LABEL.dominando },
+  { nivel: "nao_aplica", label: NIVEL_OU_NA_LABEL.nao_aplica },
   { nivel: "vazio", label: "Não avaliado" },
 ];
 
@@ -33,7 +35,7 @@ export function HeatmapDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data } = useStudentAssessment(alunoId);
+  const { data, justificativas } = useStudentAssessment(alunoId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,18 +62,24 @@ export function HeatmapDialog({
               <div className="text-sm font-semibold mb-2">{c.competencia}</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {c.habilidades.map((h) => {
-                  const nivel = data[`${c.competencia}::${h.habilidade}`] as Nivel | undefined;
+                  const k = `${c.competencia}::${h.habilidade}`;
+                  const nivel = data[k] as NivelOuNA | undefined;
+                  const justificativa = justificativas[k];
                   const cls = HEAT_CELL[nivel ?? "vazio"];
+                  const label = nivel ? NIVEL_OU_NA_LABEL[nivel] : "Não avaliado";
                   return (
                     <div
                       key={h.habilidade}
                       className={`rounded-md p-3 text-xs leading-snug ${cls}`}
-                      title={nivel ? NIVEL_LABEL[nivel] : "Não avaliado"}
+                      title={justificativa ? `${label} — ${justificativa}` : label}
                     >
                       <div className="font-medium">{h.habilidade}</div>
                       <div className="mt-1 text-[10px] uppercase tracking-wide opacity-90">
-                        {nivel ? NIVEL_LABEL[nivel] : "—"}
+                        {nivel ? NIVEL_OU_NA_LABEL[nivel] : "—"}
                       </div>
+                      {nivel === "nao_aplica" && justificativa && (
+                        <div className="mt-1 text-[10px] italic opacity-80">{justificativa}</div>
+                      )}
                     </div>
                   );
                 })}

@@ -19,13 +19,15 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { Sparkles, Download, Check, Loader2, RotateCcw, Pencil, Eye } from "lucide-react";
+import { Sparkles, Download, Check, Loader2, RotateCcw, Pencil, Eye, MinusCircle } from "lucide-react";
 import {
   RUBRICA_INFANTIL,
   NIVEL_LABEL,
+  NIVEL_OU_NA_LABEL,
   type Nivel,
+  type NivelOuNA,
 } from "@/lib/rubrica-infantil";
-import { useStudentAssessment, type AssessmentMap } from "@/lib/assessments-store";
+import { useStudentAssessment, type AssessmentMap, type JustificativaMap } from "@/lib/assessments-store";
 import { gerarRelatorioAluno } from "@/lib/report.functions";
 import { useAuth } from "@/hooks/useAuth";
 import ispLogo from "@/assets/isp-logo.png";
@@ -38,6 +40,8 @@ const NIVEL_CELL: Record<Nivel, string> = {
   desenvolvendo: "bg-green-500 text-white",
   dominando: "bg-green-700 text-white",
 };
+
+const NA_CELL = "bg-muted text-muted-foreground border-dashed";
 
 function key(comp: string, hab: string) {
   return `${comp}::${hab}`;
@@ -54,8 +58,9 @@ export function AvaliarDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data, observacao, fechado, save } = useStudentAssessment(alunoId);
+  const { data, justificativas, observacao, fechado, save } = useStudentAssessment(alunoId);
   const [local, setLocal] = useState<AssessmentMap>(data);
+  const [localJust, setLocalJust] = useState<JustificativaMap>(justificativas);
   const [localObs, setLocalObs] = useState<string>(observacao);
   const [openItems, setOpenItems] = useState<Record<string, string[]>>({});
   const hydratedRef = useRef(false);
@@ -63,6 +68,7 @@ export function AvaliarDialog({
   useEffect(() => {
     if (open) {
       setLocal(data);
+      setLocalJust(justificativas);
       setLocalObs(observacao);
       setOpenItems({});
       // pequeno delay para evitar que o efeito de auto-save dispare
@@ -79,31 +85,49 @@ export function AvaliarDialog({
   // ou sair do site no meio do preenchimento.
   useEffect(() => {
     if (!open || fechado || !hydratedRef.current) return;
-    save(local, localObs);
-  }, [local, localObs, open, fechado, save]);
+    save(local, localJust, localObs);
+  }, [local, localJust, localObs, open, fechado, save]);
 
   const total = RUBRICA_INFANTIL.reduce((acc, c) => acc + c.habilidades.length, 0);
-  const preenchidos = Object.keys(local).length;
+  const preenchidos = Object.values(local).filter((v) => v !== "nao_aplica").length;
+  const naAplica = Object.values(local).filter((v) => v === "nao_aplica").length;
 
-  function setNivel(comp: string, hab: string, nivel: Nivel, slug: string) {
+  function setNivel(comp: string, hab: string, nivel: NivelOuNA, slug: string) {
     if (fechado) return;
+    const k = key(comp, hab);
     setLocal((prev) => {
-      const k = key(comp, hab);
       if (prev[k] === nivel) {
         const { [k]: _, ...rest } = prev;
         return rest;
       }
       return { ...prev, [k]: nivel };
     });
-    setOpenItems((prev) => ({
-      ...prev,
-      [slug]: (prev[slug] ?? []).filter((v) => v !== key(comp, hab)),
-    }));
+    if (nivel !== "nao_aplica") {
+      // limpa justificativa ao sair de N/A
+      setLocalJust((prev) => {
+        if (!(k in prev)) return prev;
+        const { [k]: _, ...rest } = prev;
+        return rest;
+      });
+    }
+    // Mantém o item aberto se for N/A para escrever justificativa.
+    if (nivel !== "nao_aplica") {
+      setOpenItems((prev) => ({
+        ...prev,
+        [slug]: (prev[slug] ?? []).filter((v) => v !== k),
+      }));
+    }
+  }
+
+  function setJustificativa(comp: string, hab: string, value: string) {
+    if (fechado) return;
+    const k = key(comp, hab);
+    setLocalJust((prev) => ({ ...prev, [k]: value }));
   }
 
   function handleSave() {
-    save(local, localObs);
-    toast.success(`Avaliação salva (${Object.keys(local).length}/${total} habilidades)`);
+    save(local, localJust, localObs);
+    toast.success(`Avaliação salva (${preenchidos} avaliada(s) · ${naAplica} N/A)`);
     onOpenChange(false);
   }
 
@@ -126,15 +150,22 @@ export function AvaliarDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex shrink-0 items-center gap-2 text-sm">
-          <Badge variant="secondary">{preenchidos}/{total} habilidades</Badge>
-          {!fechado && (preenchidos > 0 || localObs.trim()) && (
+        <div className="flex shrink-0 items-center gap-2 text-sm flex-wrap">
+          <Badge variant="secondary">{preenchidos}/{total} avaliadas</Badge>
+          {naAplica > 0 && (
+            <Badge variant="outline" className="border-dashed">{naAplica} N/A</Badge>
+          )}
+          <span className="text-xs text-muted-foreground">
+            Cobertura: {preenchidos + naAplica}/{total}
+          </span>
+          {!fechado && (preenchidos > 0 || naAplica > 0 || localObs.trim()) && (
             <Button
               variant="ghost"
               size="sm"
               className="h-7 gap-1"
               onClick={() => {
                 setLocal({});
+                setLocalJust({});
                 setLocalObs("");
               }}
             >
@@ -177,15 +208,20 @@ export function AvaliarDialog({
                               />
                               <span className="text-sm font-medium">{h.habilidade}</span>
                               {cur && (
-                                <Badge variant="outline" className={`ml-1 text-[10px] uppercase border-transparent ${NIVEL_CELL[cur]}`}>
-                                  {NIVEL_LABEL[cur]}
+                                <Badge
+                                  variant="outline"
+                                  className={`ml-1 text-[10px] uppercase border-transparent ${
+                                    cur === "nao_aplica" ? NA_CELL : NIVEL_CELL[cur as Nivel]
+                                  }`}
+                                >
+                                  {NIVEL_OU_NA_LABEL[cur]}
                                 </Badge>
                               )}
                             </div>
                           </AccordionTrigger>
                         </div>
 
-                        <AccordionContent className="px-3 pb-3">
+                        <AccordionContent className="px-3 pb-3 space-y-3">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                             {NIVEIS.map((n) => {
                               const selected = cur === n;
@@ -221,6 +257,50 @@ export function AvaliarDialog({
                               );
                             })}
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setNivel(c.competencia, h.habilidade, "nao_aplica", c.slug)
+                            }
+                            className={`w-full text-left rounded-md border border-dashed p-3 transition-colors hover:bg-muted/60 ${
+                              cur === "nao_aplica"
+                                ? "bg-muted ring-2 ring-offset-1 ring-foreground/20"
+                                : "bg-card"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              <MinusCircle className="h-3.5 w-3.5" />
+                              Não se aplica
+                              {cur === "nao_aplica" && <Check className="h-3.5 w-3.5 ml-auto" />}
+                            </div>
+                            <p className="text-[11px] leading-relaxed text-muted-foreground mt-1">
+                              Marque esta opção quando a habilidade não for relevante para este
+                              aluno neste momento. O item será registrado no relatório como não
+                              aplicável, sem pontuação.
+                            </p>
+                          </button>
+
+                          {cur === "nao_aplica" && (
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-medium text-muted-foreground">
+                                Justificativa breve (opcional)
+                              </label>
+                              <Textarea
+                                value={localJust[k] ?? ""}
+                                onChange={(e) =>
+                                  setJustificativa(c.competencia, h.habilidade, e.target.value)
+                                }
+                                placeholder="Ex.: habilidade não trabalhada neste semestre / contexto específico do aluno."
+                                className="min-h-[60px] text-xs"
+                                maxLength={500}
+                                readOnly={fechado}
+                              />
+                              <div className="text-[10px] text-muted-foreground text-right">
+                                {(localJust[k] ?? "").length}/500
+                              </div>
+                            </div>
+                          )}
                         </AccordionContent>
                       </AccordionItem>
                     );
@@ -383,7 +463,7 @@ export function RelatorioDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data, observacao } = useStudentAssessment(alunoId);
+  const { data, justificativas, observacao } = useStudentAssessment(alunoId);
   const { user } = useAuth();
   const professorNome =
     (user?.user_metadata as any)?.full_name || user?.email || "Professor(a)";
@@ -398,7 +478,8 @@ export function RelatorioDialog({
 
   const avaliacoes = Object.entries(data).map(([k, nivel]) => {
     const [competencia, habilidade] = k.split("::");
-    return { competencia, habilidade, nivel };
+    const justificativa = nivel === "nao_aplica" ? justificativas[k] : undefined;
+    return { competencia, habilidade, nivel, justificativa };
   });
 
   async function handleGerarCompleto() {

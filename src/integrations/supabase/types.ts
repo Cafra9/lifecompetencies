@@ -730,6 +730,7 @@ export type Database = {
           created_at: string
           habilidade: string
           id: string
+          justificativa: string | null
           nivel: string
           updated_at: string
           user_id: string
@@ -740,6 +741,7 @@ export type Database = {
           created_at?: string
           habilidade: string
           id?: string
+          justificativa?: string | null
           nivel: string
           updated_at?: string
           user_id: string
@@ -750,6 +752,7 @@ export type Database = {
           created_at?: string
           habilidade?: string
           id?: string
+          justificativa?: string | null
           nivel?: string
           updated_at?: string
           user_id?: string

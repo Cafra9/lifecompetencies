@@ -2,11 +2,17 @@
 // Extraído do ISP Life Competencies Brochure (páginas 10-19)
 
 export type Nivel = "iniciando" | "desenvolvendo" | "dominando";
+export type NivelOuNA = Nivel | "nao_aplica";
 
 export const NIVEL_LABEL: Record<Nivel, string> = {
   iniciando: "Iniciando",
   desenvolvendo: "Desenvolvendo",
   dominando: "Dominando",
+};
+
+export const NIVEL_OU_NA_LABEL: Record<NivelOuNA, string> = {
+  ...NIVEL_LABEL,
+  nao_aplica: "Não se aplica",
 };
 
 export interface RubricaHabilidade {

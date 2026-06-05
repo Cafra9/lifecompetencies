@@ -1,0 +1,1 @@
+ALTER TABLE public.student_assessments ADD COLUMN IF NOT EXISTS justificativa text;
