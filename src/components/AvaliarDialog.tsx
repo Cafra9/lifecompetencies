@@ -541,7 +541,7 @@ export function RelatorioDialog({
   }
 
   async function fetchEvidencias(): Promise<
-    { titulo: string; categoria: string; descricao: string; arquivo: string }[]
+    { titulo: string; categoria: string; descricao: string; arquivo: string; storagePath: string }[]
   > {
     try {
       const sb = supabase as any;
@@ -559,6 +559,7 @@ export function RelatorioDialog({
           categoria: String(e.requirement?.nome ?? "Outra"),
           descricao: String(e.descricao ?? "").slice(0, 2000),
           arquivo,
+          storagePath: url,
         };
       });
     } catch (e) {
