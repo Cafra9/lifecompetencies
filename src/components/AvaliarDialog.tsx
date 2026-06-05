@@ -385,11 +385,13 @@ function downloadPDF({
   alunoNome,
   professorNome,
   segmentoLabel,
+  fontes,
 }: {
   texto: string;
   alunoNome: string;
   professorNome: string;
   segmentoLabel: string;
+  fontes?: string;
 }) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -468,6 +470,28 @@ function downloadPDF({
     y += lineHeight * 0.5;
   }
 
+  if (fontes && fontes.trim()) {
+    y += lineHeight;
+    if (y > pageH - marginBottom - lineHeight * 3) {
+      doc.addPage();
+      y = marginTop;
+    }
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(marginX, y - lineHeight * 0.6, pageW - marginX, y - lineHeight * 0.6);
+    doc.setFontSize(9);
+    doc.setTextColor(110, 110, 110);
+    const fLines = doc.splitTextToSize(fontes, maxWidth) as string[];
+    for (const line of fLines) {
+      if (y > pageH - marginBottom) {
+        doc.addPage();
+        y = marginTop;
+      }
+      doc.text(line, marginX, y);
+      y += lineHeight * 0.85;
+    }
+  }
+
   // Rodapé numeração
   const pageCount = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
@@ -506,6 +530,10 @@ export function RelatorioDialog({
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
+  const [analisadas, setAnalisadas] = useState<{ titulo: string; categoria: string; arquivo: string }[]>([]);
+  const [naoAnalisadas, setNaoAnalisadas] = useState<{ titulo: string; arquivo: string; motivo: string }[]>([]);
+  const [temObservacao, setTemObservacao] = useState(false);
+  const [temBases, setTemBases] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const gerar = useServerFn(gerarRelatorioAluno);
 
@@ -541,7 +569,7 @@ export function RelatorioDialog({
   }
 
   async function fetchEvidencias(): Promise<
-    { titulo: string; categoria: string; descricao: string; arquivo: string }[]
+    { titulo: string; categoria: string; descricao: string; arquivo: string; storagePath: string }[]
   > {
     try {
       const sb = supabase as any;
@@ -559,6 +587,7 @@ export function RelatorioDialog({
           categoria: String(e.requirement?.nome ?? "Outra"),
           descricao: String(e.descricao ?? "").slice(0, 2000),
           arquivo,
+          storagePath: url,
         };
       });
     } catch (e) {
@@ -587,9 +616,19 @@ export function RelatorioDialog({
           observacaoProfessor: observacao,
           avaliacoes,
           basesConhecimento,
-          evidencias,
+          evidencias: evidencias.map((e) => ({
+            titulo: e.titulo,
+            categoria: e.categoria,
+            descricao: e.descricao,
+            arquivo: e.arquivo,
+            storagePath: e.storagePath,
+          })),
         },
       });
+      setTemObservacao(!!observacao.trim());
+      setTemBases(basesConhecimento.length > 0);
+      setAnalisadas((res as any).analisadas ?? []);
+      setNaoAnalisadas((res as any).naoAnalisadas ?? []);
       if (res.error) toast.error(res.error);
       else setTexto(res.texto);
     } catch (e) {
@@ -651,7 +690,7 @@ export function RelatorioDialog({
       toast.error("Gere o relatório antes de baixar.");
       return;
     }
-    downloadPDF({ texto, alunoNome, professorNome, segmentoLabel });
+    downloadPDF({ texto, alunoNome, professorNome, segmentoLabel, fontes: fontesTexto });
   }
 
   // Gera automaticamente ao abrir
@@ -673,6 +712,25 @@ export function RelatorioDialog({
 
   const trechoLen = selection ? selection.end - selection.start : 0;
 
+  const fontesTexto = useMemo(() => {
+    const fontes: string[] = ["rubricas avaliadas"];
+    if (temObservacao) fontes.push("observações dos professores");
+    if (temBases) fontes.push("Bases de Conhecimento do ano");
+    let base = `Gerado por IA com base nas ${fontes.join(", ")}`;
+    if (analisadas.length > 0) {
+      base += ` e nas seguintes evidências analisadas: ${analisadas.map((a) => a.titulo).join(", ")}`;
+    }
+    base += ".";
+    if (naoAnalisadas.length > 0) {
+      base +=
+        " Evidências não consideradas nesta análise: " +
+        naoAnalisadas.map((n) => `${n.titulo}${n.arquivo ? ` (${n.arquivo})` : ""} — ${n.motivo}`).join("; ") +
+        ".";
+    }
+    return base;
+  }, [analisadas, naoAnalisadas, temObservacao, temBases]);
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[92vh] flex flex-col">
@@ -682,7 +740,7 @@ export function RelatorioDialog({
             Relatório · {alunoNome}
           </DialogTitle>
           <DialogDescription>
-            Gerado por IA com base nas avaliações e nas observações do(a) professor(a). Selecione um trecho e clique em <strong>Regerar</strong> para reescrever apenas a seleção.
+            {texto ? fontesTexto : "Gerado por IA com base nas rubricas avaliadas, observações dos professores, Bases de Conhecimento do ano e nas evidências anexadas ao aluno. Selecione um trecho e clique em Regerar para reescrever apenas a seleção."}
           </DialogDescription>
         </DialogHeader>
 
@@ -721,6 +779,16 @@ export function RelatorioDialog({
               placeholder="O relatório aparecerá aqui."
               style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
             />
+            {texto && (
+              <div className="rounded-md border bg-muted/40 p-2 text-[11px] leading-relaxed text-muted-foreground space-y-1">
+                <p>{fontesTexto}</p>
+                {naoAnalisadas.length > 0 && (
+                  <p className="text-amber-700 dark:text-amber-300">
+                    ⚠ {naoAnalisadas.length} evidência(s) não analisada(s) — veja motivos acima.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
