@@ -85,6 +85,7 @@ function ConfiguracoesPage() {
         <Tabs defaultValue={defaultTab}>
           <TabsList className="flex-wrap h-auto">
             {canManage && <TabsTrigger value="anos">Anos escolares</TabsTrigger>}
+            {canManage && <TabsTrigger value="turmas">Turmas</TabsTrigger>}
             {canManage && <TabsTrigger value="requirements">Exigências</TabsTrigger>}
             {(canManage || isCoord) && <TabsTrigger value="year-reqs">Exigências por ano</TabsTrigger>}
             {canManage && <TabsTrigger value="teachers">Professores</TabsTrigger>}
@@ -92,6 +93,7 @@ function ConfiguracoesPage() {
           </TabsList>
 
           {canManage && <TabsContent value="anos" className="mt-6"><AnosTab /></TabsContent>}
+          {canManage && <TabsContent value="turmas" className="mt-6"><ClassesTab /></TabsContent>}
           {canManage && <TabsContent value="requirements" className="mt-6"><RequirementsTab /></TabsContent>}
           {(canManage || isCoord) && <TabsContent value="year-reqs" className="mt-6"><YearRequirementsTab /></TabsContent>}
           {canManage && <TabsContent value="teachers" className="mt-6"><TeachersTab /></TabsContent>}
