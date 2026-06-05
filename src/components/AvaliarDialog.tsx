@@ -33,6 +33,25 @@ import { useAuth } from "@/hooks/useAuth";
 import ispLogo from "@/assets/isp-logo.png";
 import { corDaCompetencia } from "@/lib/competencia-cores";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+type TomRelatorio = "descritivo" | "objetivo" | "afetivo";
+const TOM_LABEL: Record<TomRelatorio, string> = {
+  descritivo: "Mais descritivo",
+  objetivo: "Mais objetivo",
+  afetivo: "Mais afetivo",
+};
+const TOM_HINT: Record<TomRelatorio, string> = {
+  descritivo: "Narrativo e detalhado, com cenas do cotidiano.",
+  objetivo: "Direto e conciso, foco em fatos e observações.",
+  afetivo: "Acolhedor e caloroso, valorizando vínculos.",
+};
 
 const NIVEIS: Nivel[] = ["iniciando", "desenvolvendo", "dominando"];
 
