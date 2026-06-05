@@ -5,20 +5,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RUBRICA_INFANTIL, NIVEL_LABEL, type Nivel } from "@/lib/rubrica-infantil";
+import { RUBRICA_INFANTIL, NIVEL_OU_NA_LABEL, type NivelOuNA } from "@/lib/rubrica-infantil";
 import { useStudentAssessment } from "@/lib/assessments-store";
 
-const HEAT_CELL: Record<Nivel | "vazio", string> = {
+const HEAT_CELL: Record<NivelOuNA | "vazio", string> = {
   iniciando: "bg-green-200 text-green-900",
   desenvolvendo: "bg-green-500 text-white",
   dominando: "bg-green-700 text-white",
-  vazio: "bg-muted text-muted-foreground",
+  nao_aplica: "bg-muted text-muted-foreground border border-dashed",
+  vazio: "bg-muted/40 text-muted-foreground",
 };
 
-const LEGEND: { nivel: Nivel | "vazio"; label: string }[] = [
-  { nivel: "iniciando", label: NIVEL_LABEL.iniciando },
-  { nivel: "desenvolvendo", label: NIVEL_LABEL.desenvolvendo },
-  { nivel: "dominando", label: NIVEL_LABEL.dominando },
+const LEGEND: { nivel: NivelOuNA | "vazio"; label: string }[] = [
+  { nivel: "iniciando", label: NIVEL_OU_NA_LABEL.iniciando },
+  { nivel: "desenvolvendo", label: NIVEL_OU_NA_LABEL.desenvolvendo },
+  { nivel: "dominando", label: NIVEL_OU_NA_LABEL.dominando },
+  { nivel: "nao_aplica", label: NIVEL_OU_NA_LABEL.nao_aplica },
   { nivel: "vazio", label: "Não avaliado" },
 ];
 
