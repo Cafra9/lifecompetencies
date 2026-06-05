@@ -63,17 +63,32 @@ export function AvaliarDialog({
   const [local, setLocal] = useState<AssessmentMap>(data);
   const [localJust, setLocalJust] = useState<JustificativaMap>(justificativas);
   const [localObs, setLocalObs] = useState<string>(observacao);
-  const [openItems, setOpenItems] = useState<Record<string, string[]>>({});
+  const [openKey, setOpenKey] = useState<string>("");
   const hydratedRef = useRef(false);
+
+  // Flat sequential list of all habilidades (for "expand next" behavior).
+  const flat = useMemo(
+    () =>
+      RUBRICA_INFANTIL.flatMap((c) =>
+        c.habilidades.map((h) => ({
+          comp: c.competencia,
+          compSlug: c.slug,
+          hab: h.habilidade,
+          k: key(c.competencia, h.habilidade),
+        })),
+      ),
+    [],
+  );
 
   useEffect(() => {
     if (open) {
       setLocal(data);
       setLocalJust(justificativas);
       setLocalObs(observacao);
-      setOpenItems({});
-      // pequeno delay para evitar que o efeito de auto-save dispare
-      // com o estado anterior na primeira renderização após abrir.
+      // Abre automaticamente a primeira habilidade ainda sem resposta
+      // para que o professor já possa começar.
+      const firstUnanswered = flat.find((it) => !(it.k in data));
+      setOpenKey(firstUnanswered?.k ?? "");
       hydratedRef.current = false;
       requestAnimationFrame(() => {
         hydratedRef.current = true;
@@ -92,38 +107,46 @@ export function AvaliarDialog({
   const total = RUBRICA_INFANTIL.reduce((acc, c) => acc + c.habilidades.length, 0);
   const preenchidos = Object.values(local).filter((v) => v !== "nao_aplica").length;
   const naAplica = Object.values(local).filter((v) => v === "nao_aplica").length;
+  const allAnswered = preenchidos + naAplica >= total;
 
-  function setNivel(comp: string, hab: string, nivel: NivelOuNA, slug: string) {
+  function advanceFrom(currentKey: string) {
+    const idx = flat.findIndex((x) => x.k === currentKey);
+    // Próxima habilidade ainda sem resposta a partir do índice atual;
+    // se não houver, vai para a próxima da lista; se for a última, fecha.
+    for (let i = idx + 1; i < flat.length; i++) {
+      if (!(flat[i].k in local)) {
+        setOpenKey(flat[i].k);
+        return;
+      }
+    }
+    if (idx + 1 < flat.length) {
+      setOpenKey(flat[idx + 1].k);
+    } else {
+      setOpenKey("");
+      toast.success("Última habilidade respondida — revise e salve a avaliação.");
+    }
+  }
+
+  function setNivel(comp: string, hab: string, nivel: NivelOuNA) {
     if (fechado) return;
     const k = key(comp, hab);
-    setLocal((prev) => {
-      if (prev[k] === nivel) {
+    setLocal((prev) => ({ ...prev, [k]: nivel }));
+    // "Não se aplica" não exige justificativa — limpa qualquer texto residual.
+    if (nivel === "nao_aplica") {
+      setLocalJust((prev) => {
+        if (!(k in prev)) return prev;
         const { [k]: _, ...rest } = prev;
         return rest;
-      }
-      return { ...prev, [k]: nivel };
-    });
-    if (nivel !== "nao_aplica") {
-      // limpa justificativa ao sair de N/A
+      });
+    } else {
       setLocalJust((prev) => {
         if (!(k in prev)) return prev;
         const { [k]: _, ...rest } = prev;
         return rest;
       });
     }
-    // Mantém o item aberto se for N/A para escrever justificativa.
-    if (nivel !== "nao_aplica") {
-      setOpenItems((prev) => ({
-        ...prev,
-        [slug]: (prev[slug] ?? []).filter((v) => v !== k),
-      }));
-    }
-  }
-
-  function setJustificativa(comp: string, hab: string, value: string) {
-    if (fechado) return;
-    const k = key(comp, hab);
-    setLocalJust((prev) => ({ ...prev, [k]: value }));
+    // Avança automaticamente para a próxima habilidade.
+    advanceFrom(k);
   }
 
   function handleSave() {
