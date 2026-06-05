@@ -308,35 +308,36 @@ Responda APENAS com o texto reescrito, sem aspas, sem prefácios.`;
       .join("\n");
 
     const promptTexto = `Você é um(a) coordenador(a) pedagógico(a) do programa iSP Life Competencies.
-Gere um relatório pedagógico em português, em prosa fluida e profissional, sobre o desenvolvimento do(a) aluno(a) "${data.alunoNome}" (${data.segmentoLabel}).
+Escreva um relatório pedagógico PERSONALIZADO, em português, em prosa fluida, descritiva e acolhedora, sobre o desenvolvimento do(a) aluno(a) "${data.alunoNome}" (${data.segmentoLabel}).
 
-HIERARQUIA OBRIGATÓRIA DAS FONTES (use TODAS as disponíveis, nesta ordem de prioridade):
-1) Rubricas preenchidas pelo(a) professor(a) — FONTE PRINCIPAL e definitiva do nível de desenvolvimento (níveis pontuáveis: iniciando, desenvolvendo, dominando).
-2) Evidências anexadas (imagens, PDFs e textos enviados nesta mesma mensagem) — leia/interprete o conteúdo real de cada uma e relacione achados específicos às competências e habilidades avaliadas, usando-as para justificar, exemplificar e enriquecer os comentários.
-3) Observações do(a) professor(a) — contexto qualitativo adicional.
-4) Bases de Conhecimento vinculadas ao ano escolar — referência pedagógica para critérios, descritores e recomendações.
+OBJETIVO DE ESCRITA:
+- O texto deve soar como uma narrativa viva sobre a criança — suas interações, descobertas, curiosidades, vínculos e o ambiente em que está inserida — e NÃO como uma lista de rubricas.
+- Foque nas características típicas e singulares da faixa etária do segmento informado, contextualizando o que se observa nessa fase do desenvolvimento.
+- Use as rubricas pontuadas como base interpretativa silenciosa: traduza os níveis em descrições qualitativas do percurso da criança, SEM citar a palavra "rubrica", SEM repetir mecanicamente nomes de habilidades em sequência, e SEM nomear níveis técnicos ("iniciando/desenvolvendo/dominando").
+- Incorpore naturalmente trechos, expressões e referências das Bases de Conhecimento fornecidas, sem reproduzi-las literalmente nem citá-las como fonte.
+- Quando houver evidências anexadas analisáveis, integre o que se observa nelas à narrativa de forma fluida (ex.: "em uma das produções registradas…", "em um dos momentos documentados…"), sem citar nomes de arquivos, URLs ou rótulos técnicos.
 
 REGRAS:
-- Se houver evidências anexadas, é OBRIGATÓRIO citá-las de forma natural na narrativa (ex.: "no PDF do portfólio observa-se…", "a imagem da produção mostra…"), relacionando-as às habilidades correspondentes. Não ignore nenhuma evidência analisável.
-- Nunca infira ou altere os níveis das rubricas a partir das evidências — a avaliação profissional do(a) professor(a) prevalece.
-- Não cite nomes de arquivos nem URLs no texto final.
-- Não invente avaliações que não foram informadas.
-- NUNCA atribua nível pontuável a uma habilidade marcada como NÃO SE APLICA.
-- Use tom acolhedor; sem bullets, sem markdown — apenas parágrafos separados por linha em branco.
+- NÃO faça um parágrafo separado por competência nem um parágrafo por habilidade. Construa uma narrativa contínua que entrelaça as competências naturalmente.
+- NÃO liste, mencione ou comente as habilidades marcadas como NÃO SE APLICA — simplesmente omita-as do texto.
+- Não invente avaliações que não foram informadas. Não infira níveis a partir das evidências — a leitura do(a) professor(a) prevalece.
+- Sem bullets, sem títulos, sem markdown — apenas parágrafos separados por linha em branco.
+- Personalize: utilize o nome do(a) aluno(a) com naturalidade ao longo do texto, evitando repetições excessivas.
 
-Avaliações pontuadas (FONTE PRINCIPAL):
+ESTRUTURA SUGERIDA (fluida, sem títulos visíveis):
+1) Abertura situando a criança, a fase do desenvolvimento e o ambiente escolar.
+2) Corpo descritivo (2 a 4 parágrafos) sobre como ${data.alunoNome} vem se desenvolvendo — interações com colegas e adultos, descobertas, formas de aprender, expressão, autonomia e relação com o conhecimento — ancorado nas avaliações pontuadas e enriquecido pelas evidências e observações do(a) professor(a) quando houver.
+3) Parágrafo final destacando o compromisso conjunto da escola e da família em sustentar e ampliar o crescimento contínuo de TODAS as competências do(a) aluno(a), com tom de parceria e confiança no percurso.
+
+Insumos para sua escrita (uso interno — não copie literalmente):
+
+Avaliações pontuadas (base interpretativa principal — traduza em descrições qualitativas):
 ${linhasPontuadas || "(nenhuma habilidade pontuada)"}
-${naBloco}${obsBloco}
-${processadas.length ? `\nÍndice das evidências anexadas (use TODAS as marcadas como analisáveis):\n${evidIndex}\n` : ""}
-${evidTextoBloco ? `\nConteúdo das evidências de texto:\n${evidTextoBloco}\n` : ""}
+${naBloco ? "\n[Habilidades NÃO SE APLICA — apenas para seu conhecimento; NÃO mencione no relatório]\n" + linhasNA + "\n" : ""}${obsBloco}
+${processadas.length ? `\nEvidências disponíveis (integre os achados à narrativa, sem citar arquivos):\n${evidIndex}\n` : ""}
+${evidTextoBloco ? `\nConteúdo textual das evidências:\n${evidTextoBloco}\n` : ""}
 ${basesBloco}
-Estrutura do relatório:
-1) Parágrafo de abertura com visão geral.
-2) Um parágrafo por competência avaliada (Cognitivo, Global, Digital, Autoliderança, Interpessoal — apenas as que têm habilidades pontuadas), destacando pontos fortes e áreas de crescimento e ancorando observações nas evidências analisadas, sem listá-las.
-3) Um parágrafo incorporando as observações do(a) professor(a), quando houver.
-${linhasNA ? '4) Um parágrafo dedicado às "Habilidades não aplicáveis neste momento": liste as habilidades marcadas como NÃO SE APLICA citando a justificativa do(a) professor(a) quando houver, sem atribuir qualquer nível.\n5) Parágrafo final com recomendações práticas e próximos passos, alinhadas às Bases de Conhecimento.' : "4) Parágrafo final com recomendações práticas e próximos passos, alinhadas às Bases de Conhecimento."}
-
-Responda APENAS com o texto do relatório, sem títulos extras, sem markdown.`;
+Responda APENAS com o texto do relatório, em prosa fluida, sem títulos, sem markdown.`;
 
     const userParts: Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }> = [
       { type: "text", text: promptTexto },
