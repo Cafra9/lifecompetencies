@@ -214,7 +214,7 @@ export function AvaliarDialog({
           )}
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto pr-3 -mr-3">
+        <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto pr-3 -mr-3">
           <div className="space-y-5">
             {RUBRICA_INFANTIL.map((c) => {
               const cor = corDaCompetencia(c.competencia);
