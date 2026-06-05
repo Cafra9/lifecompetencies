@@ -62,18 +62,24 @@ export function HeatmapDialog({
               <div className="text-sm font-semibold mb-2">{c.competencia}</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {c.habilidades.map((h) => {
-                  const nivel = data[`${c.competencia}::${h.habilidade}`] as Nivel | undefined;
+                  const k = `${c.competencia}::${h.habilidade}`;
+                  const nivel = data[k] as NivelOuNA | undefined;
+                  const justificativa = justificativas[k];
                   const cls = HEAT_CELL[nivel ?? "vazio"];
+                  const label = nivel ? NIVEL_OU_NA_LABEL[nivel] : "Não avaliado";
                   return (
                     <div
                       key={h.habilidade}
                       className={`rounded-md p-3 text-xs leading-snug ${cls}`}
-                      title={nivel ? NIVEL_LABEL[nivel] : "Não avaliado"}
+                      title={justificativa ? `${label} — ${justificativa}` : label}
                     >
                       <div className="font-medium">{h.habilidade}</div>
                       <div className="mt-1 text-[10px] uppercase tracking-wide opacity-90">
-                        {nivel ? NIVEL_LABEL[nivel] : "—"}
+                        {nivel ? NIVEL_OU_NA_LABEL[nivel] : "—"}
                       </div>
+                      {nivel === "nao_aplica" && justificativa && (
+                        <div className="mt-1 text-[10px] italic opacity-80">{justificativa}</div>
+                      )}
                     </div>
                   );
                 })}
