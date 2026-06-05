@@ -22,6 +22,8 @@ import {
 import { AvaliarDialog, RelatorioDialog } from "@/components/AvaliarDialog";
 import { HeatmapDialog } from "@/components/HeatmapDialog";
 import { ClassHeatmapDialog } from "@/components/ClassHeatmapDialog";
+import { EvidencesDialog, useEvidenceCount } from "@/components/EvidencesDialog";
+import { Paperclip } from "lucide-react";
 import { useAllAssessments, countByLevel, useStudentAssessment } from "@/lib/assessments-store";
 import { toast } from "sonner";
 
@@ -38,6 +40,7 @@ function AvaliacoesPage() {
   const [avaliarId, setAvaliarId] = useState<string | null>(null);
   const [relatorioId, setRelatorioId] = useState<string | null>(null);
   const [heatmapId, setHeatmapId] = useState<string | null>(null);
+  const [evidencesId, setEvidencesId] = useState<string | null>(null);
   const [classHeatmap, setClassHeatmap] = useState(false);
 
   const { data: turmas = [] } = useQuery({
@@ -140,6 +143,7 @@ function AvaliacoesPage() {
             onAvaliar={() => setAvaliarId(a.id)}
             onRelatorio={() => setRelatorioId(a.id)}
             onHeatmap={() => setHeatmapId(a.id)}
+            onEvidences={() => setEvidencesId(a.id)}
           />
         ))}
       </div>
@@ -152,6 +156,16 @@ function AvaliacoesPage() {
           </CardContent>
         </Card>
       )}
+
+      {ativo(evidencesId) && (
+        <EvidencesDialog
+          open={!!evidencesId}
+          onOpenChange={(v) => !v && setEvidencesId(null)}
+          studentId={ativo(evidencesId)!.id}
+          studentName={ativo(evidencesId)!.nome}
+        />
+      )}
+
 
       {ativo(avaliarId) && (
         <AvaliarDialog
@@ -195,14 +209,18 @@ function AlunoCard({
   onAvaliar,
   onRelatorio,
   onHeatmap,
+  onEvidences,
 }: {
   aluno: { id: string; nome: string; ano: string };
   onAvaliar: () => void;
   onRelatorio: () => void;
   onHeatmap: () => void;
+  onEvidences: () => void;
 }) {
   const { data, fechado, setFechadoStatus } = useStudentAssessment(aluno.id);
   const c = countByLevel(data);
+  const { data: evidenceCount = 0 } = useEvidenceCount(aluno.id);
+
 
   function toggleFechado() {
     if (fechado) {
@@ -250,7 +268,7 @@ function AlunoCard({
           <Row label={<span className="text-green-500">Iniciando</span>} value={c.iniciando} />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <Button
             variant="outline"
             className="w-full gap-2"
@@ -268,6 +286,14 @@ function AlunoCard({
           >
             <FileText className="h-4 w-4" />
             Relatório
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full gap-2"
+            onClick={onEvidences}
+          >
+            <Paperclip className="h-4 w-4" />
+            Evidências ({evidenceCount})
           </Button>
         </div>
 
