@@ -176,6 +176,7 @@ function Page() {
           onOpenChange={setOpen}
           item={editing}
           years={years ?? []}
+          onResetEditing={() => setEditing(null)}
           onSaved={() => qc.invalidateQueries({ queryKey: ["knowledge-bases-admin"] })}
         />
       </div>
@@ -184,13 +185,14 @@ function Page() {
 }
 
 function EditDialog({
-  open, onOpenChange, item, years, onSaved,
+  open, onOpenChange, item, years, onSaved, onResetEditing,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   item: BaseWithYears | null;
   years: SchoolYear[];
   onSaved: () => void;
+  onResetEditing: () => void;
 }) {
   const sb = supabase as any;
   const { user } = useAuth();
@@ -214,9 +216,19 @@ function EditDialog({
     setYearIds((prev) => prev.includes(id) ? prev.filter((y) => y !== id) : [...prev, id]);
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!titulo.trim() || !conteudo.trim()) return toast.error("Título e conteúdo são obrigatórios");
+  function resetForm() {
+    setTitulo("");
+    setDescricao("");
+    setConteudo("");
+    setAtivo(true);
+    setYearIds([]);
+  }
+
+  async function save(opts: { keepOpen: boolean }) {
+    if (!titulo.trim() || !conteudo.trim()) {
+      toast.error("Título e conteúdo são obrigatórios");
+      return;
+    }
     if (!user) return toast.error("Sessão inválida");
     setBusy(true);
     try {
@@ -246,12 +258,23 @@ function EditDialog({
       }
       toast.success(item ? "Base atualizada" : "Base criada");
       onSaved();
-      onOpenChange(false);
+      if (opts.keepOpen) {
+        // reset state so the next save creates a NEW base instead of overwriting
+        resetForm();
+        onResetEditing();
+      } else {
+        onOpenChange(false);
+      }
     } catch (err: any) {
       toast.error(err.message ?? "Erro ao salvar");
     } finally {
       setBusy(false);
     }
+  }
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    save({ keepOpen: false });
   }
 
   // group years by segmento for cleaner UI
@@ -323,8 +346,12 @@ function EditDialog({
             <Label className="cursor-pointer">Ativo</Label>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button type="button" variant="secondary" disabled={busy}
+              onClick={() => save({ keepOpen: true })}>
+              {busy ? "Salvando..." : "Salvar e adicionar outra"}
+            </Button>
             <Button type="submit" disabled={busy}>{busy ? "Salvando..." : "Salvar"}</Button>
           </DialogFooter>
         </form>
