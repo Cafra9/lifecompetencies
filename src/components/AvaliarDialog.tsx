@@ -32,6 +32,7 @@ import { gerarRelatorioAluno } from "@/lib/report.functions";
 import { useAuth } from "@/hooks/useAuth";
 import ispLogo from "@/assets/isp-logo.png";
 import { corDaCompetencia } from "@/lib/competencia-cores";
+import { supabase } from "@/integrations/supabase/client";
 
 const NIVEIS: Nivel[] = ["iniciando", "desenvolvendo", "dominando"];
 
