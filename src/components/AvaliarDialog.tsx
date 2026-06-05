@@ -755,6 +755,16 @@ export function RelatorioDialog({
               placeholder="O relatório aparecerá aqui."
               style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
             />
+            {texto && (
+              <div className="rounded-md border bg-muted/40 p-2 text-[11px] leading-relaxed text-muted-foreground space-y-1">
+                <p>{fontesTexto}</p>
+                {naoAnalisadas.length > 0 && (
+                  <p className="text-amber-700 dark:text-amber-300">
+                    ⚠ {naoAnalisadas.length} evidência(s) não analisada(s) — veja motivos acima.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
