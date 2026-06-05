@@ -449,31 +449,33 @@ function TeachersTab() {
   const { user } = useAuth();
   const [profiles, setProfiles] = useState<ProfileLite[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole[]>>({});
-  const [teacherYears, setTeacherYears] = useState<TeacherYear[]>([]);
+  const [classTeachers, setClassTeachers] = useState<ClassTeacherRow[]>([]);
+  const [classes, setClasses] = useState<Turma[]>([]);
   const [years, setYears] = useState<SchoolYear[]>([]);
   const [editing, setEditing] = useState<ProfileLite | null>(null);
-  const [editYears, setEditYears] = useState<string[]>([]);
+  const [editClasses, setEditClasses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Invite
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [inviteSeg, setInviteSeg] = useState<SchoolSegment>("infantil");
-  const [inviteYears, setInviteYears] = useState<string[]>([]);
+  const [inviteClasses, setInviteClasses] = useState<string[]>([]);
 
   const refresh = async () => {
     setLoading(true);
-    const [pr, ur, ty, sy] = await Promise.all([
+    const [pr, ur, ct, cl, sy] = await Promise.all([
       sb.from("profiles").select("id, nome, email, cargo, ativo"),
       sb.from("user_roles").select("user_id, role"),
-      sb.from("teacher_years").select("*"),
+      sb.from("class_teachers").select("*"),
+      sb.from("classes").select("*").eq("arquivada", false).order("nome"),
       sb.from("school_years").select("*").order("ordem"),
     ]);
     setProfiles((pr.data ?? []) as ProfileLite[]);
     const m: Record<string, AppRole[]> = {};
     for (const r of (ur.data ?? []) as Array<{ user_id: string; role: AppRole }>) (m[r.user_id] ||= []).push(r.role);
     setRoles(m);
-    setTeacherYears((ty.data ?? []) as TeacherYear[]);
+    setClassTeachers((ct.data ?? []) as ClassTeacherRow[]);
+    setClasses((cl.data ?? []) as Turma[]);
     setYears((sy.data ?? []) as SchoolYear[]);
     setLoading(false);
   };
@@ -481,32 +483,39 @@ function TeachersTab() {
 
   const teachers = profiles.filter((p) => (roles[p.id] ?? []).includes("professor"));
   const yearsById = useMemo(() => Object.fromEntries(years.map((y) => [y.id, y])), [years]);
+  const classesById = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c])), [classes]);
 
-  const openInvite = () => { setEmail(""); setInviteSeg("infantil"); setInviteYears([]); setInviteOpen(true); };
+  // Turmas atendidas por professor = união de regente + class_teachers
+  const turmasDoProfessor = (uid: string) => {
+    const ids = new Set<string>();
+    classes.forEach((c) => { if (c.professor_regente_id === uid || c.professor_id === uid) ids.add(c.id); });
+    classTeachers.forEach((ct) => { if (ct.user_id === uid) ids.add(ct.class_id); });
+    return Array.from(ids).map((id) => classesById[id]).filter(Boolean);
+  };
+
+  const openInvite = () => { setEmail(""); setInviteClasses([]); setInviteOpen(true); };
 
   const sendInvite = async () => {
     if (!email.trim()) return toast.error("Informe o e-mail");
-    if (inviteYears.length === 0) return toast.error("Selecione ao menos um ano");
-    // Salva códigos dos anos para o trigger de aceite (compat: coluna anos é text[])
-    const anosCodigos = inviteYears.map((id) => yearsById[id]?.codigo).filter(Boolean);
+    // Guardamos as turmas pré-selecionadas em `anos` (text[]) como ids — usado após aceite.
     const { data, error } = await sb.from("invitations").insert({
       email: email.trim().toLowerCase(),
       role: "professor",
-      segmento: inviteSeg,
-      anos: anosCodigos,
+      segmento: null,
+      anos: inviteClasses.length ? inviteClasses : null,
       invited_by: user!.id,
     }).select().single();
     if (error) return toast.error(error.message);
     const url = `${window.location.origin}/login?invite=${data.token}`;
     await navigator.clipboard?.writeText(url).catch(() => {});
-    toast.success("Convite criado", { description: "Link copiado para a área de transferência." });
+    toast.success("Convite criado", { description: "Link copiado. Vincule as turmas após o aceite." });
     setInviteOpen(false);
     refresh();
   };
 
   const openEdit = (p: ProfileLite) => {
     setEditing(p);
-    setEditYears(teacherYears.filter((t) => t.user_id === p.id && t.school_year_id).map((t) => t.school_year_id!));
+    setEditClasses(turmasDoProfessor(p.id).map((c) => c.id));
   };
 
   const saveEdit = async () => {
@@ -514,24 +523,17 @@ function TeachersTab() {
     const updates: any = { cargo: editing.cargo, ativo: editing.ativo, nome: editing.nome };
     const { error: e1 } = await sb.from("profiles").update(updates).eq("id", editing.id);
     if (e1) return toast.error(e1.message);
-    // Reescreve teacher_years
-    const current = teacherYears.filter((t) => t.user_id === editing.id);
-    const toRemove = current.filter((t) => !editYears.includes(t.school_year_id!));
-    const toAdd = editYears.filter((id) => !current.some((t) => t.school_year_id === id));
-    for (const t of toRemove) await sb.from("teacher_years").delete().eq("id", t.id);
+
+    // Sincroniza class_teachers (não toca turmas onde é regente — manter integridade)
+    const currentCt = classTeachers.filter((t) => t.user_id === editing.id);
+    const regenteClasses = new Set(classes.filter((c) => c.professor_regente_id === editing.id || c.professor_id === editing.id).map((c) => c.id));
+    const desired = editClasses.filter((id) => !regenteClasses.has(id));
+    const toRemove = currentCt.filter((t) => !desired.includes(t.class_id));
+    const toAdd = desired.filter((id) => !currentCt.some((t) => t.class_id === id));
+    for (const t of toRemove) await sb.from("class_teachers").delete().eq("id", t.id);
     for (const id of toAdd) {
-      const y = yearsById[id]; if (!y) continue;
-      // Tabela ainda exige coluna `ano` (enum); usar primeiro valor compatível ou null não funciona.
-      // Inserimos com `ano` igual ao código (cast best-effort) — em ambientes legados, o enum pode rejeitar.
-      const { error } = await sb.from("teacher_years").insert({
-        user_id: editing.id, segmento: y.segmento, school_year_id: id, ano: y.codigo.toLowerCase(),
-      });
-      if (error) {
-        // fallback: deixar `ano` igual ao primeiro valor do enum (ignorado pelo app — usamos school_year_id)
-        await sb.from("teacher_years").insert({
-          user_id: editing.id, segmento: y.segmento, school_year_id: id, ano: "ano_1",
-        });
-      }
+      const { error } = await sb.from("class_teachers").insert({ class_id: id, user_id: editing.id, papel: null });
+      if (error) toast.error(`Turma ${classesById[id]?.nome}: ${error.message}`);
     }
     toast.success("Professor atualizado");
     setEditing(null);
@@ -539,21 +541,24 @@ function TeachersTab() {
   };
 
   const removeTeacher = async (p: ProfileLite) => {
-    if (!confirm(`Remover o papel de professor de "${p.nome}"? O usuário continua existindo, apenas perde o vínculo.`)) return;
-    await sb.from("teacher_years").delete().eq("user_id", p.id);
+    if (!confirm(`Remover o papel de professor de "${p.nome}"? Vínculos de turma serão removidos.`)) return;
+    await sb.from("class_teachers").delete().eq("user_id", p.id);
     await sb.from("user_roles").delete().eq("user_id", p.id).eq("role", "professor");
     toast.success("Vínculo removido");
     refresh();
   };
 
-  const segYears = years.filter((y) => y.segmento === inviteSeg && y.ativo);
+  const classLabel = (c: Turma) => {
+    const y = c.school_year_id ? yearsById[c.school_year_id] : null;
+    return y ? `${c.nome} · ${y.nome}` : c.nome;
+  };
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Professores</CardTitle>
-          <CardDescription>Convide professores, edite cargo/anos e ative ou desative.</CardDescription>
+          <CardDescription>Convide professores e vincule-os às turmas que atendem.</CardDescription>
         </div>
         <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
           <DialogTrigger asChild>
@@ -564,23 +569,18 @@ function TeachersTab() {
             <div className="space-y-3">
               <div><Label>E-mail</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
               <div>
-                <Label>Segmento</Label>
-                <Select value={inviteSeg} onValueChange={(v) => { setInviteSeg(v as SchoolSegment); setInviteYears([]); }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{SEGMENTS.map((s) => <SelectItem key={s} value={s}>{SEGMENT_LABELS[s]}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="mb-2 block">Anos atendidos</Label>
-                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-auto">
-                  {segYears.map((y) => (
-                    <label key={y.id} className="flex items-center gap-2 text-sm">
-                      <Checkbox checked={inviteYears.includes(y.id)} onCheckedChange={(c) =>
-                        setInviteYears((prev) => c ? [...prev, y.id] : prev.filter((x) => x !== y.id))} />
-                      {y.nome}
+                <Label className="mb-2 block">Turmas atendidas (opcional)</Label>
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-auto border rounded p-2">
+                  {classes.map((c) => (
+                    <label key={c.id} className="flex items-center gap-2 text-sm">
+                      <Checkbox checked={inviteClasses.includes(c.id)} onCheckedChange={(v) =>
+                        setInviteClasses((prev) => v ? [...prev, c.id] : prev.filter((x) => x !== c.id))} />
+                      {classLabel(c)}
                     </label>
                   ))}
+                  {classes.length === 0 && <p className="text-xs text-muted-foreground col-span-2">Nenhuma turma cadastrada.</p>}
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">Você poderá vincular ou alterar as turmas depois.</p>
               </div>
             </div>
             <DialogFooter>
@@ -597,18 +597,24 @@ function TeachersTab() {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Nome</TableHead><TableHead>E-mail</TableHead><TableHead>Cargo</TableHead>
-              <TableHead>Anos atendidos</TableHead><TableHead>Status</TableHead>
+              <TableHead>Turmas atendidas</TableHead><TableHead>Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {teachers.map((p) => {
-                const ys = teacherYears.filter((t) => t.user_id === p.id).map((t) => yearsById[t.school_year_id ?? ""]?.nome).filter(Boolean);
+                const ts = turmasDoProfessor(p.id);
                 return (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.nome}</TableCell>
                     <TableCell className="text-sm">{p.email}</TableCell>
                     <TableCell className="text-sm">{p.cargo ?? "—"}</TableCell>
-                    <TableCell className="text-sm">{ys.length ? ys.join(", ") : <span className="text-muted-foreground">—</span>}</TableCell>
+                    <TableCell className="text-sm">
+                      {ts.length ? (
+                        <div className="flex flex-wrap gap-1">
+                          {ts.map((c) => <Badge key={c.id} variant="secondary" className="text-xs">{c.nome}</Badge>)}
+                        </div>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </TableCell>
                     <TableCell>{p.ativo ? <Badge variant="secondary">Ativo</Badge> : <Badge variant="outline">Inativo</Badge>}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="ghost" size="sm" onClick={() => openEdit(p)}><Pencil className="h-3 w-3" /></Button>
@@ -630,15 +636,22 @@ function TeachersTab() {
                 <div><Label>Nome</Label><Input value={editing.nome} onChange={(e) => setEditing({ ...editing, nome: e.target.value })} /></div>
                 <div><Label>Cargo / Função</Label><Input value={editing.cargo ?? ""} onChange={(e) => setEditing({ ...editing, cargo: e.target.value })} placeholder="Professor regente, Auxiliar…" /></div>
                 <div>
-                  <Label className="mb-2 block">Anos atendidos</Label>
-                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-auto border rounded p-2">
-                    {years.filter((y) => y.ativo).map((y) => (
-                      <label key={y.id} className="flex items-center gap-2 text-sm">
-                        <Checkbox checked={editYears.includes(y.id)} onCheckedChange={(c) =>
-                          setEditYears((prev) => c ? [...prev, y.id] : prev.filter((x) => x !== y.id))} />
-                        {y.nome} <span className="text-xs text-muted-foreground">· {SEGMENT_LABELS[y.segmento]}</span>
-                      </label>
-                    ))}
+                  <Label className="mb-2 block">Turmas atendidas</Label>
+                  <div className="grid grid-cols-2 gap-2 max-h-56 overflow-auto border rounded p-2">
+                    {classes.map((c) => {
+                      const isRegente = c.professor_regente_id === editing.id || c.professor_id === editing.id;
+                      return (
+                        <label key={c.id} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={editClasses.includes(c.id) || isRegente}
+                            disabled={isRegente}
+                            onCheckedChange={(v) =>
+                              setEditClasses((prev) => v ? [...prev, c.id] : prev.filter((x) => x !== c.id))} />
+                          {classLabel(c)} {isRegente && <span className="text-xs text-primary">· Regente</span>}
+                        </label>
+                      );
+                    })}
+                    {classes.length === 0 && <p className="text-xs text-muted-foreground col-span-2">Nenhuma turma cadastrada.</p>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2"><Switch checked={editing.ativo} onCheckedChange={(v) => setEditing({ ...editing, ativo: v })} /><Label>Ativo</Label></div>
@@ -647,6 +660,221 @@ function TeachersTab() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
               <Button onClick={saveEdit}>Salvar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ===========================================================
+   4b. TURMAS — CRUD em Configurações
+   =========================================================== */
+function ClassesTab() {
+  const { user } = useAuth();
+  const [classes, setClasses] = useState<Turma[]>([]);
+  const [years, setYears] = useState<SchoolYear[]>([]);
+  const [profiles, setProfiles] = useState<ProfileLite[]>([]);
+  const [classTeachers, setClassTeachers] = useState<ClassTeacherRow[]>([]);
+  const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
+  const [editing, setEditing] = useState<Partial<Turma> | null>(null);
+  const [editAssoc, setEditAssoc] = useState<string[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = async () => {
+    setLoading(true);
+    const [cl, sy, pr, ct, st] = await Promise.all([
+      sb.from("classes").select("*").order("nome"),
+      sb.from("school_years").select("*").eq("ativo", true).order("ordem"),
+      sb.from("profiles").select("id, nome, email, cargo, ativo").order("nome"),
+      sb.from("class_teachers").select("*"),
+      supabase.from("students").select("class_id"),
+    ]);
+    setClasses((cl.data ?? []) as Turma[]);
+    setYears((sy.data ?? []) as SchoolYear[]);
+    setProfiles((pr.data ?? []) as ProfileLite[]);
+    setClassTeachers((ct.data ?? []) as ClassTeacherRow[]);
+    const counts: Record<string, number> = {};
+    ((st.data ?? []) as any[]).forEach((s) => { counts[s.class_id] = (counts[s.class_id] || 0) + 1; });
+    setStudentCounts(counts);
+    setLoading(false);
+  };
+  useEffect(() => { refresh(); }, []);
+
+  const yearsById = useMemo(() => Object.fromEntries(years.map((y) => [y.id, y])), [years]);
+  const profileById = useMemo(() => Object.fromEntries(profiles.map((p) => [p.id, p])), [profiles]);
+
+  const openNew = () => { setEditing({ nome: "", letra: "", school_year_id: null, professor_regente_id: user?.id ?? null, arquivada: false }); setEditAssoc([]); };
+  const openEdit = (c: Turma) => { setEditing(c); setEditAssoc(classTeachers.filter((t) => t.class_id === c.id).map((t) => t.user_id)); };
+
+  const save = async () => {
+    if (!user || !editing) return;
+    const y = editing.school_year_id ? yearsById[editing.school_year_id] : null;
+    if (!y) return toast.error("Selecione o ano escolar");
+    const letra = (editing.letra ?? "").trim().toUpperCase();
+    const nome = (editing.nome?.trim()) || `${y.codigo}${letra}`;
+    if (!nome) return toast.error("Informe o nome da turma");
+
+    const payload: any = {
+      nome,
+      letra: letra || null,
+      segmento: y.segmento,
+      school_year_id: y.id,
+      professor_id: user.id,
+      professor_regente_id: editing.professor_regente_id || user.id,
+      arquivada: !!editing.arquivada,
+    };
+    let classId = editing.id;
+    if (editing.id) {
+      const { error } = await sb.from("classes").update(payload).eq("id", editing.id);
+      if (error) return toast.error(error.message);
+    } else {
+      const { data, error } = await sb.from("classes").insert(payload).select("id").single();
+      if (error || !data) return toast.error(error?.message || "Erro");
+      classId = data.id;
+    }
+    if (classId) {
+      await sb.from("class_teachers").delete().eq("class_id", classId);
+      const rows = editAssoc
+        .filter((uid) => uid && uid !== payload.professor_regente_id)
+        .map((uid) => ({ class_id: classId, user_id: uid, papel: null }));
+      if (rows.length) {
+        const { error } = await sb.from("class_teachers").insert(rows);
+        if (error) toast.error(`Professores associados: ${error.message}`);
+      }
+    }
+    toast.success(editing.id ? "Turma atualizada" : "Turma criada");
+    setEditing(null); setEditAssoc([]);
+    refresh();
+  };
+
+  const toggleArchive = async (c: Turma) => {
+    const { error } = await sb.from("classes").update({ arquivada: !c.arquivada }).eq("id", c.id);
+    if (error) return toast.error(error.message);
+    toast.success(c.arquivada ? "Turma reativada" : "Turma arquivada");
+    refresh();
+  };
+  const remove = async (c: Turma) => {
+    if (!confirm(`Excluir definitivamente "${c.nome}"? Alunos vinculados também serão removidos.`)) return;
+    const { error } = await sb.from("classes").delete().eq("id", c.id);
+    if (error) return toast.error(error.message);
+    toast.success("Turma excluída");
+    refresh();
+  };
+
+  const list = classes.filter((c) => showArchived ? c.arquivada : !c.arquivada);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Gestão de turmas</CardTitle>
+          <CardDescription>Cadastre, edite, arquive ou exclua turmas. Cada turma pertence a um ano escolar.</CardDescription>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Switch checked={showArchived} onCheckedChange={setShowArchived} />
+            <Label>Arquivadas</Label>
+          </div>
+          <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" /> Nova turma</Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? <p className="text-muted-foreground">Carregando…</p> : list.length === 0 ? (
+          <p className="text-muted-foreground text-sm">Nenhuma turma {showArchived ? "arquivada" : "ativa"}.</p>
+        ) : (
+          <Table>
+            <TableHeader><TableRow>
+              <TableHead>Nome</TableHead><TableHead>Ano</TableHead><TableHead>Regente</TableHead>
+              <TableHead>Professores</TableHead><TableHead>Alunos</TableHead><TableHead>Status</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow></TableHeader>
+            <TableBody>
+              {list.map((c) => {
+                const y = c.school_year_id ? yearsById[c.school_year_id] : null;
+                const regente = c.professor_regente_id ? profileById[c.professor_regente_id] : null;
+                const cts = classTeachers.filter((t) => t.class_id === c.id);
+                return (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-medium">{c.nome}</TableCell>
+                    <TableCell className="text-sm">{y ? y.nome : <span className="text-amber-700">—</span>}</TableCell>
+                    <TableCell className="text-sm">{regente?.nome ?? "—"}</TableCell>
+                    <TableCell className="text-sm">{cts.length ? cts.map((t) => profileById[t.user_id]?.nome).filter(Boolean).join(", ") : "—"}</TableCell>
+                    <TableCell className="text-sm">{studentCounts[c.id] ?? 0}</TableCell>
+                    <TableCell>{c.arquivada ? <Badge variant="outline">Arquivada</Badge> : <Badge variant="secondary">Ativa</Badge>}</TableCell>
+                    <TableCell className="text-right space-x-1">
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(c)}><Pencil className="h-3 w-3" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => toggleArchive(c)}>{c.arquivada ? <ArchiveRestore className="h-3 w-3" /> : <Archive className="h-3 w-3" />}</Button>
+                      <Button variant="ghost" size="sm" onClick={() => remove(c)}><Trash2 className="h-3 w-3" /></Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
+
+        <Dialog open={!!editing} onOpenChange={(o) => !o && (setEditing(null), setEditAssoc([]))}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>{editing?.id ? "Editar turma" : "Nova turma"}</DialogTitle></DialogHeader>
+            {editing && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Ano escolar</Label>
+                    <Select value={editing.school_year_id ?? ""} onValueChange={(v) => {
+                      const y = yearsById[v];
+                      const letra = (editing.letra ?? "").trim().toUpperCase();
+                      setEditing({ ...editing, school_year_id: v, nome: y ? `${y.codigo}${letra}` : editing.nome });
+                    }}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        {years.map((y) => <SelectItem key={y.id} value={y.id}>{y.nome} · {SEGMENT_LABELS[y.segmento]}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Letra</Label>
+                    <Input value={editing.letra ?? ""} maxLength={3} onChange={(e) => {
+                      const letra = e.target.value.toUpperCase();
+                      const y = editing.school_year_id ? yearsById[editing.school_year_id] : null;
+                      setEditing({ ...editing, letra, nome: y ? `${y.codigo}${letra}` : editing.nome });
+                    }} placeholder="A" />
+                  </div>
+                </div>
+                <div>
+                  <Label>Nome da turma</Label>
+                  <Input value={editing.nome ?? ""} onChange={(e) => setEditing({ ...editing, nome: e.target.value })} placeholder="K4B, Y3C…" />
+                </div>
+                <div>
+                  <Label>Professor regente</Label>
+                  <Select value={editing.professor_regente_id ?? user?.id ?? ""} onValueChange={(v) => setEditing({ ...editing, professor_regente_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {profiles.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}{p.cargo ? ` · ${p.cargo}` : ""}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="mb-2 block">Professores associados</Label>
+                  <div className="grid grid-cols-2 gap-2 max-h-56 overflow-auto border rounded p-2">
+                    {profiles.filter((p) => p.id !== editing.professor_regente_id).map((p) => (
+                      <label key={p.id} className="flex items-center gap-2 text-sm">
+                        <Checkbox checked={editAssoc.includes(p.id)} onCheckedChange={(v) =>
+                          setEditAssoc((prev) => v ? [...prev, p.id] : prev.filter((x) => x !== p.id))} />
+                        {p.nome}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2"><Switch checked={!!editing.arquivada} onCheckedChange={(v) => setEditing({ ...editing, arquivada: v })} /><Label>Arquivada</Label></div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setEditing(null); setEditAssoc([]); }}>Cancelar</Button>
+              <Button onClick={save}>Salvar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
