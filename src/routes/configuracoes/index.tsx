@@ -239,7 +239,8 @@ function RequirementsTab() {
 
   const refresh = async () => {
     setLoading(true);
-    const { data } = await sb.from("evidence_requirements").select("*").order("nome");
+    // Rubrica é obrigatória para todos os anos e não é gerenciada aqui (sempre ativa).
+    const { data } = await sb.from("evidence_requirements").select("*").neq("slug", "rubrica").order("nome");
     setItems((data ?? []) as EvidenceReq[]);
     setLoading(false);
   };
