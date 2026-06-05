@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { jsPDF } from "jspdf";
 import {
@@ -63,17 +63,32 @@ export function AvaliarDialog({
   const [local, setLocal] = useState<AssessmentMap>(data);
   const [localJust, setLocalJust] = useState<JustificativaMap>(justificativas);
   const [localObs, setLocalObs] = useState<string>(observacao);
-  const [openItems, setOpenItems] = useState<Record<string, string[]>>({});
+  const [openKey, setOpenKey] = useState<string>("");
   const hydratedRef = useRef(false);
+
+  // Flat sequential list of all habilidades (for "expand next" behavior).
+  const flat = useMemo(
+    () =>
+      RUBRICA_INFANTIL.flatMap((c) =>
+        c.habilidades.map((h) => ({
+          comp: c.competencia,
+          compSlug: c.slug,
+          hab: h.habilidade,
+          k: key(c.competencia, h.habilidade),
+        })),
+      ),
+    [],
+  );
 
   useEffect(() => {
     if (open) {
       setLocal(data);
       setLocalJust(justificativas);
       setLocalObs(observacao);
-      setOpenItems({});
-      // pequeno delay para evitar que o efeito de auto-save dispare
-      // com o estado anterior na primeira renderização após abrir.
+      // Abre automaticamente a primeira habilidade ainda sem resposta
+      // para que o professor já possa começar.
+      const firstUnanswered = flat.find((it) => !(it.k in data));
+      setOpenKey(firstUnanswered?.k ?? "");
       hydratedRef.current = false;
       requestAnimationFrame(() => {
         hydratedRef.current = true;
@@ -92,38 +107,46 @@ export function AvaliarDialog({
   const total = RUBRICA_INFANTIL.reduce((acc, c) => acc + c.habilidades.length, 0);
   const preenchidos = Object.values(local).filter((v) => v !== "nao_aplica").length;
   const naAplica = Object.values(local).filter((v) => v === "nao_aplica").length;
+  const allAnswered = preenchidos + naAplica >= total;
 
-  function setNivel(comp: string, hab: string, nivel: NivelOuNA, slug: string) {
+  function advanceFrom(currentKey: string) {
+    const idx = flat.findIndex((x) => x.k === currentKey);
+    // Próxima habilidade ainda sem resposta a partir do índice atual;
+    // se não houver, vai para a próxima da lista; se for a última, fecha.
+    for (let i = idx + 1; i < flat.length; i++) {
+      if (!(flat[i].k in local)) {
+        setOpenKey(flat[i].k);
+        return;
+      }
+    }
+    if (idx + 1 < flat.length) {
+      setOpenKey(flat[idx + 1].k);
+    } else {
+      setOpenKey("");
+      toast.success("Última habilidade respondida — revise e salve a avaliação.");
+    }
+  }
+
+  function setNivel(comp: string, hab: string, nivel: NivelOuNA) {
     if (fechado) return;
     const k = key(comp, hab);
-    setLocal((prev) => {
-      if (prev[k] === nivel) {
+    setLocal((prev) => ({ ...prev, [k]: nivel }));
+    // "Não se aplica" não exige justificativa — limpa qualquer texto residual.
+    if (nivel === "nao_aplica") {
+      setLocalJust((prev) => {
+        if (!(k in prev)) return prev;
         const { [k]: _, ...rest } = prev;
         return rest;
-      }
-      return { ...prev, [k]: nivel };
-    });
-    if (nivel !== "nao_aplica") {
-      // limpa justificativa ao sair de N/A
+      });
+    } else {
       setLocalJust((prev) => {
         if (!(k in prev)) return prev;
         const { [k]: _, ...rest } = prev;
         return rest;
       });
     }
-    // Mantém o item aberto se for N/A para escrever justificativa.
-    if (nivel !== "nao_aplica") {
-      setOpenItems((prev) => ({
-        ...prev,
-        [slug]: (prev[slug] ?? []).filter((v) => v !== k),
-      }));
-    }
-  }
-
-  function setJustificativa(comp: string, hab: string, value: string) {
-    if (fechado) return;
-    const k = key(comp, hab);
-    setLocalJust((prev) => ({ ...prev, [k]: value }));
+    // Avança automaticamente para a próxima habilidade.
+    advanceFrom(k);
   }
 
   function handleSave() {
@@ -186,10 +209,11 @@ export function AvaliarDialog({
                   <span className={cor.text}>{c.competencia}</span>
                 </div>
                 <Accordion
-                  type="multiple"
+                  type="single"
+                  collapsible
                   className="space-y-2"
-                  value={openItems[c.slug] ?? []}
-                  onValueChange={(v) => setOpenItems((prev) => ({ ...prev, [c.slug]: v }))}
+                  value={openKey}
+                  onValueChange={(v) => setOpenKey(v)}
                 >
                   {c.habilidades.map((h, idx) => {
                     const k = key(c.competencia, h.habilidade);
@@ -223,6 +247,48 @@ export function AvaliarDialog({
                         </div>
 
                         <AccordionContent className="px-3 pb-3 space-y-3">
+                          {/* Barra compacta com todas as opções no topo — sempre acima da dobra */}
+                          <div className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 -mx-3 px-3 pt-1 pb-2 border-b">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                              {NIVEIS.map((n) => {
+                                const selected = cur === n;
+                                return (
+                                  <button
+                                    key={n}
+                                    type="button"
+                                    onClick={() => setNivel(c.competencia, h.habilidade, n)}
+                                    className={`rounded-md border px-2 py-2 text-xs font-semibold uppercase tracking-wide transition-colors hover:brightness-95 ${
+                                      selected
+                                        ? `${NIVEL_CELL[n]} border-transparent ring-2 ring-offset-1 ring-foreground/20`
+                                        : "bg-card border-border"
+                                    }`}
+                                  >
+                                    <span className="inline-flex items-center justify-center gap-1">
+                                      {NIVEL_LABEL[n]}
+                                      {selected && <Check className="h-3.5 w-3.5" />}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                              <button
+                                type="button"
+                                onClick={() => setNivel(c.competencia, h.habilidade, "nao_aplica")}
+                                className={`rounded-md border border-dashed px-2 py-2 text-xs font-semibold uppercase tracking-wide transition-colors hover:bg-muted/60 ${
+                                  cur === "nao_aplica"
+                                    ? "bg-muted ring-2 ring-offset-1 ring-foreground/20"
+                                    : "bg-card text-muted-foreground"
+                                }`}
+                              >
+                                <span className="inline-flex items-center justify-center gap-1">
+                                  <MinusCircle className="h-3.5 w-3.5" />
+                                  Não se aplica
+                                  {cur === "nao_aplica" && <Check className="h-3.5 w-3.5" />}
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Descritores de referência (clicáveis) */}
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                             {NIVEIS.map((n) => {
                               const selected = cur === n;
@@ -230,8 +296,7 @@ export function AvaliarDialog({
                                 <button
                                   key={n}
                                   type="button"
-                                  data-selected={selected}
-                                  onClick={() => setNivel(c.competencia, h.habilidade, n, c.slug)}
+                                  onClick={() => setNivel(c.competencia, h.habilidade, n)}
                                   className={`text-left rounded-md border p-3 transition-colors hover:brightness-95 ${
                                     selected
                                       ? `${NIVEL_CELL[n]} border-transparent ring-2 ring-offset-1 ring-foreground/20`
@@ -258,50 +323,6 @@ export function AvaliarDialog({
                               );
                             })}
                           </div>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setNivel(c.competencia, h.habilidade, "nao_aplica", c.slug)
-                            }
-                            className={`w-full text-left rounded-md border border-dashed p-3 transition-colors hover:bg-muted/60 ${
-                              cur === "nao_aplica"
-                                ? "bg-muted ring-2 ring-offset-1 ring-foreground/20"
-                                : "bg-card"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                              <MinusCircle className="h-3.5 w-3.5" />
-                              Não se aplica
-                              {cur === "nao_aplica" && <Check className="h-3.5 w-3.5 ml-auto" />}
-                            </div>
-                            <p className="text-[11px] leading-relaxed text-muted-foreground mt-1">
-                              Marque esta opção quando a habilidade não for relevante para este
-                              aluno neste momento. O item será registrado no relatório como não
-                              aplicável, sem pontuação.
-                            </p>
-                          </button>
-
-                          {cur === "nao_aplica" && (
-                            <div className="space-y-1">
-                              <label className="text-[11px] font-medium text-muted-foreground">
-                                Justificativa breve (opcional)
-                              </label>
-                              <Textarea
-                                value={localJust[k] ?? ""}
-                                onChange={(e) =>
-                                  setJustificativa(c.competencia, h.habilidade, e.target.value)
-                                }
-                                placeholder="Ex.: habilidade não trabalhada neste semestre / contexto específico do aluno."
-                                className="min-h-[60px] text-xs"
-                                maxLength={500}
-                                readOnly={fechado}
-                              />
-                              <div className="text-[10px] text-muted-foreground text-right">
-                                {(localJust[k] ?? "").length}/500
-                              </div>
-                            </div>
-                          )}
                         </AccordionContent>
                       </AccordionItem>
                     );
@@ -337,7 +358,18 @@ export function AvaliarDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {fechado ? "Fechar" : "Cancelar"}
           </Button>
-          {!fechado && <Button onClick={handleSave}>Salvar avaliação</Button>}
+          {!fechado && (
+            <Button
+              onClick={handleSave}
+              className={
+                allAnswered
+                  ? "ring-2 ring-offset-2 ring-primary animate-pulse"
+                  : ""
+              }
+            >
+              {allAnswered ? "Finalizar avaliação" : "Salvar avaliação"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
