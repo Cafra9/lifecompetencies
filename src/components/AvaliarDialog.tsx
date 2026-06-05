@@ -208,15 +208,20 @@ export function AvaliarDialog({
                               />
                               <span className="text-sm font-medium">{h.habilidade}</span>
                               {cur && (
-                                <Badge variant="outline" className={`ml-1 text-[10px] uppercase border-transparent ${NIVEL_CELL[cur]}`}>
-                                  {NIVEL_LABEL[cur]}
+                                <Badge
+                                  variant="outline"
+                                  className={`ml-1 text-[10px] uppercase border-transparent ${
+                                    cur === "nao_aplica" ? NA_CELL : NIVEL_CELL[cur as Nivel]
+                                  }`}
+                                >
+                                  {NIVEL_OU_NA_LABEL[cur]}
                                 </Badge>
                               )}
                             </div>
                           </AccordionTrigger>
                         </div>
 
-                        <AccordionContent className="px-3 pb-3">
+                        <AccordionContent className="px-3 pb-3 space-y-3">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                             {NIVEIS.map((n) => {
                               const selected = cur === n;
@@ -252,6 +257,50 @@ export function AvaliarDialog({
                               );
                             })}
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setNivel(c.competencia, h.habilidade, "nao_aplica", c.slug)
+                            }
+                            className={`w-full text-left rounded-md border border-dashed p-3 transition-colors hover:bg-muted/60 ${
+                              cur === "nao_aplica"
+                                ? "bg-muted ring-2 ring-offset-1 ring-foreground/20"
+                                : "bg-card"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              <MinusCircle className="h-3.5 w-3.5" />
+                              Não se aplica
+                              {cur === "nao_aplica" && <Check className="h-3.5 w-3.5 ml-auto" />}
+                            </div>
+                            <p className="text-[11px] leading-relaxed text-muted-foreground mt-1">
+                              Marque esta opção quando a habilidade não for relevante para este
+                              aluno neste momento. O item será registrado no relatório como não
+                              aplicável, sem pontuação.
+                            </p>
+                          </button>
+
+                          {cur === "nao_aplica" && (
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-medium text-muted-foreground">
+                                Justificativa breve (opcional)
+                              </label>
+                              <Textarea
+                                value={localJust[k] ?? ""}
+                                onChange={(e) =>
+                                  setJustificativa(c.competencia, h.habilidade, e.target.value)
+                                }
+                                placeholder="Ex.: habilidade não trabalhada neste semestre / contexto específico do aluno."
+                                className="min-h-[60px] text-xs"
+                                maxLength={500}
+                                readOnly={fechado}
+                              />
+                              <div className="text-[10px] text-muted-foreground text-right">
+                                {(localJust[k] ?? "").length}/500
+                              </div>
+                            </div>
+                          )}
                         </AccordionContent>
                       </AccordionItem>
                     );
