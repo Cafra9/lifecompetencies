@@ -320,29 +320,35 @@ export type Database = {
       }
       evidence_requirements: {
         Row: {
+          allowed_extensions: string[]
           ativo: boolean
           created_at: string
           descricao: string | null
           id: string
           nome: string
+          ordem: number
           slug: string
           updated_at: string
         }
         Insert: {
+          allowed_extensions?: string[]
           ativo?: boolean
           created_at?: string
           descricao?: string | null
           id?: string
           nome: string
+          ordem?: number
           slug: string
           updated_at?: string
         }
         Update: {
+          allowed_extensions?: string[]
           ativo?: boolean
           created_at?: string
           descricao?: string | null
           id?: string
           nome?: string
+          ordem?: number
           slug?: string
           updated_at?: string
         }

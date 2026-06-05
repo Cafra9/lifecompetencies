@@ -25,6 +25,7 @@ import { Route as TurmasIdRouteImport } from './routes/turmas/$id'
 import { Route as FormacaoSlugRouteImport } from './routes/formacao/$slug'
 import { Route as AvaliacoesRubricaRouteImport } from './routes/avaliacoes/rubrica'
 import { Route as AlunosIdRouteImport } from './routes/alunos/$id'
+import { Route as AdminTiposEvidenciaRouteImport } from './routes/admin/tipos-evidencia'
 import { Route as RelatoriosAlunoIdRouteImport } from './routes/relatorios/aluno/$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -107,6 +108,11 @@ const AlunosIdRoute = AlunosIdRouteImport.update({
   path: '/alunos/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminTiposEvidenciaRoute = AdminTiposEvidenciaRouteImport.update({
+  id: '/admin/tipos-evidencia',
+  path: '/admin/tipos-evidencia',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RelatoriosAlunoIdRoute = RelatoriosAlunoIdRouteImport.update({
   id: '/relatorios/aluno/$id',
   path: '/relatorios/aluno/$id',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/login': typeof LoginRoute
+  '/admin/tipos-evidencia': typeof AdminTiposEvidenciaRoute
   '/alunos/$id': typeof AlunosIdRoute
   '/avaliacoes/rubrica': typeof AvaliacoesRubricaRoute
   '/formacao/$slug': typeof FormacaoSlugRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/login': typeof LoginRoute
+  '/admin/tipos-evidencia': typeof AdminTiposEvidenciaRoute
   '/alunos/$id': typeof AlunosIdRoute
   '/avaliacoes/rubrica': typeof AvaliacoesRubricaRoute
   '/formacao/$slug': typeof FormacaoSlugRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/login': typeof LoginRoute
+  '/admin/tipos-evidencia': typeof AdminTiposEvidenciaRoute
   '/alunos/$id': typeof AlunosIdRoute
   '/avaliacoes/rubrica': typeof AvaliacoesRubricaRoute
   '/formacao/$slug': typeof FormacaoSlugRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/login'
+    | '/admin/tipos-evidencia'
     | '/alunos/$id'
     | '/avaliacoes/rubrica'
     | '/formacao/$slug'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/login'
+    | '/admin/tipos-evidencia'
     | '/alunos/$id'
     | '/avaliacoes/rubrica'
     | '/formacao/$slug'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/login'
+    | '/admin/tipos-evidencia'
     | '/alunos/$id'
     | '/avaliacoes/rubrica'
     | '/formacao/$slug'
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   LoginRoute: typeof LoginRoute
+  AdminTiposEvidenciaRoute: typeof AdminTiposEvidenciaRoute
   AlunosIdRoute: typeof AlunosIdRoute
   AvaliacoesRubricaRoute: typeof AvaliacoesRubricaRoute
   FormacaoSlugRoute: typeof FormacaoSlugRoute
@@ -365,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlunosIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/tipos-evidencia': {
+      id: '/admin/tipos-evidencia'
+      path: '/admin/tipos-evidencia'
+      fullPath: '/admin/tipos-evidencia'
+      preLoaderRoute: typeof AdminTiposEvidenciaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/relatorios/aluno/$id': {
       id: '/relatorios/aluno/$id'
       path: '/relatorios/aluno/$id'
@@ -379,6 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   LoginRoute: LoginRoute,
+  AdminTiposEvidenciaRoute: AdminTiposEvidenciaRoute,
   AlunosIdRoute: AlunosIdRoute,
   AvaliacoesRubricaRoute: AvaliacoesRubricaRoute,
   FormacaoSlugRoute: FormacaoSlugRoute,

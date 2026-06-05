@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, GraduationCap, Shield } from "lucide-react";
+import { Users, BookOpen, GraduationCap, Shield, FileType } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
   component: () => (
@@ -16,6 +16,12 @@ export const Route = createFileRoute("/admin/")({
           <AdminCard icon={Users} title="Usuários e papéis" desc="Convidar professores, coordenadores e admins" />
           <AdminCard icon={GraduationCap} title="Trilhas de formação" desc="Publicar módulos, vídeos e quizzes" />
           <AdminCard icon={BookOpen} title="Biblioteca" desc="Curar recursos, rubricas e templates" />
+          <AdminCard
+            icon={FileType}
+            title="Tipos de evidência"
+            desc="Categorias e extensões aceitas no upload"
+            to="/admin/tipos-evidencia"
+          />
           <AdminCard icon={Shield} title="Configurações" desc="Identidade visual, segmentos e domínios" />
         </div>
       </div>
@@ -23,9 +29,11 @@ export const Route = createFileRoute("/admin/")({
   ),
 });
 
-function AdminCard({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) {
-  return (
-    <Card>
+function AdminCard({
+  icon: Icon, title, desc, to,
+}: { icon: any; title: string; desc: string; to?: string }) {
+  const inner = (
+    <Card className={to ? "hover:border-primary/50 transition-colors cursor-pointer h-full" : "h-full"}>
       <CardHeader>
         <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-2">
           <Icon className="h-5 w-5" />
@@ -35,4 +43,5 @@ function AdminCard({ icon: Icon, title, desc }: { icon: any; title: string; desc
       <CardContent className="text-sm text-muted-foreground">{desc}</CardContent>
     </Card>
   );
+  return to ? <Link to={to}>{inner}</Link> : inner;
 }
