@@ -22,7 +22,7 @@ import {
 import { AvaliarDialog, RelatorioDialog } from "@/components/AvaliarDialog";
 import { HeatmapDialog } from "@/components/HeatmapDialog";
 import { ClassHeatmapDialog } from "@/components/ClassHeatmapDialog";
-import { EvidencesDialog, useEvidenceCount } from "@/components/EvidencesDialog";
+import { EvidencesDialog, useEvidenceProgress, type RequirementItem } from "@/components/EvidencesDialog";
 import { Paperclip } from "lucide-react";
 import { useAllAssessments, countByLevel, useStudentAssessment } from "@/lib/assessments-store";
 import { toast } from "sonner";
