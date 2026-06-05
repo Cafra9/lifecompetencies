@@ -508,6 +508,33 @@ export function RelatorioDialog({
     }
   }
 
+  async function fetchEvidencias(): Promise<
+    { titulo: string; categoria: string; descricao: string; arquivo: string }[]
+  > {
+    try {
+      const sb = supabase as any;
+      const { data: evs } = await sb
+        .from("student_evidences")
+        .select("titulo, descricao, arquivo_url, requirement:evidence_requirements(nome)")
+        .eq("student_id", alunoId)
+        .order("created_at", { ascending: false })
+        .limit(60);
+      return ((evs ?? []) as any[]).map((e) => {
+        const url: string = e.arquivo_url ?? "";
+        const arquivo = url ? (url.split("/").pop() ?? "").split("?")[0] : "";
+        return {
+          titulo: String(e.titulo ?? "Evidência"),
+          categoria: String(e.requirement?.nome ?? "Outra"),
+          descricao: String(e.descricao ?? "").slice(0, 2000),
+          arquivo,
+        };
+      });
+    } catch (e) {
+      console.error("Falha ao buscar evidências do aluno", e);
+      return [];
+    }
+  }
+
   async function handleGerarCompleto() {
     if (avaliacoes.length === 0) {
       toast.error("Nenhuma avaliação registrada para este aluno.");
@@ -515,7 +542,10 @@ export function RelatorioDialog({
     }
     setLoading(true);
     try {
-      const basesConhecimento = await fetchBasesConhecimento();
+      const [basesConhecimento, evidencias] = await Promise.all([
+        fetchBasesConhecimento(),
+        fetchEvidencias(),
+      ]);
       const res = await gerar({
         data: {
           mode: "full",
@@ -525,6 +555,7 @@ export function RelatorioDialog({
           observacaoProfessor: observacao,
           avaliacoes,
           basesConhecimento,
+          evidencias,
         },
       });
       if (res.error) toast.error(res.error);
