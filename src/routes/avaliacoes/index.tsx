@@ -268,10 +268,11 @@ function AlunoCard({
         </div>
 
         <div className="space-y-2 text-sm">
-          <Row label="Habilidades avaliadas" value={<Badge variant="secondary">{c.total}/15</Badge>} />
+          <Row label="Cobertura" value={<Badge variant="secondary">{c.cobertas}/15</Badge>} />
           <Row label={<span className="text-green-700">Dominando</span>} value={c.dominando} />
           <Row label={<span className="text-green-600">Desenvolvendo</span>} value={c.desenvolvendo} />
           <Row label={<span className="text-green-500">Iniciando</span>} value={c.iniciando} />
+          <Row label={<span className="text-muted-foreground">Não se aplica</span>} value={c.naoAplica} />
         </div>
 
         <div className="grid grid-cols-3 gap-2">
@@ -279,7 +280,7 @@ function AlunoCard({
             variant="outline"
             className="w-full gap-2"
             onClick={onHeatmap}
-            disabled={c.total === 0}
+            disabled={c.cobertas === 0}
           >
             <Flame className="h-4 w-4" />
             Heatmap
