@@ -688,6 +688,25 @@ export function RelatorioDialog({
 
   const trechoLen = selection ? selection.end - selection.start : 0;
 
+  const fontesTexto = useMemo(() => {
+    const fontes: string[] = ["rubricas avaliadas"];
+    if (temObservacao) fontes.push("observações dos professores");
+    if (temBases) fontes.push("Bases de Conhecimento do ano");
+    let base = `Gerado por IA com base nas ${fontes.join(", ")}`;
+    if (analisadas.length > 0) {
+      base += ` e nas seguintes evidências analisadas: ${analisadas.map((a) => a.titulo).join(", ")}`;
+    }
+    base += ".";
+    if (naoAnalisadas.length > 0) {
+      base +=
+        " Evidências não consideradas nesta análise: " +
+        naoAnalisadas.map((n) => `${n.titulo}${n.arquivo ? ` (${n.arquivo})` : ""} — ${n.motivo}`).join("; ") +
+        ".";
+    }
+    return base;
+  }, [analisadas, naoAnalisadas, temObservacao, temBases]);
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[92vh] flex flex-col">
