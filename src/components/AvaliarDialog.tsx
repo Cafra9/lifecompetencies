@@ -482,6 +482,31 @@ export function RelatorioDialog({
     return { competencia, habilidade, nivel, justificativa };
   });
 
+  async function fetchBasesConhecimento(): Promise<{ titulo: string; conteudo: string }[]> {
+    try {
+      const sb = supabase as any;
+      const { data: stu } = await sb.from("students").select("class_id").eq("id", alunoId).maybeSingle();
+      const classId = stu?.class_id;
+      if (!classId) return [];
+      const { data: cls } = await sb.from("classes").select("school_year_id").eq("id", classId).maybeSingle();
+      const yearId = cls?.school_year_id;
+      if (!yearId) return [];
+      const { data: links } = await sb
+        .from("knowledge_base_years").select("knowledge_base_id").eq("school_year_id", yearId);
+      const ids = (links ?? []).map((l: any) => l.knowledge_base_id);
+      if (ids.length === 0) return [];
+      const { data: bases } = await sb
+        .from("knowledge_bases").select("titulo, conteudo, ativo").in("id", ids).eq("ativo", true);
+      return (bases ?? []).slice(0, 20).map((b: any) => ({
+        titulo: String(b.titulo),
+        conteudo: String(b.conteudo).slice(0, 8000),
+      }));
+    } catch (e) {
+      console.error("Falha ao buscar bases de conhecimento", e);
+      return [];
+    }
+  }
+
   async function handleGerarCompleto() {
     if (avaliacoes.length === 0) {
       toast.error("Nenhuma avaliação registrada para este aluno.");
@@ -489,6 +514,7 @@ export function RelatorioDialog({
     }
     setLoading(true);
     try {
+      const basesConhecimento = await fetchBasesConhecimento();
       const res = await gerar({
         data: {
           mode: "full",
@@ -497,6 +523,7 @@ export function RelatorioDialog({
           segmentoLabel,
           observacaoProfessor: observacao,
           avaliacoes,
+          basesConhecimento,
         },
       });
       if (res.error) toast.error(res.error);
