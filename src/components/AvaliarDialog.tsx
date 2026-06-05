@@ -506,6 +506,10 @@ export function RelatorioDialog({
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
+  const [analisadas, setAnalisadas] = useState<{ titulo: string; categoria: string; arquivo: string }[]>([]);
+  const [naoAnalisadas, setNaoAnalisadas] = useState<{ titulo: string; arquivo: string; motivo: string }[]>([]);
+  const [temObservacao, setTemObservacao] = useState(false);
+  const [temBases, setTemBases] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const gerar = useServerFn(gerarRelatorioAluno);
 
