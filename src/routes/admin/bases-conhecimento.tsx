@@ -176,6 +176,7 @@ function Page() {
           onOpenChange={setOpen}
           item={editing}
           years={years ?? []}
+          onResetEditing={() => setEditing(null)}
           onSaved={() => qc.invalidateQueries({ queryKey: ["knowledge-bases-admin"] })}
         />
       </div>
@@ -184,13 +185,14 @@ function Page() {
 }
 
 function EditDialog({
-  open, onOpenChange, item, years, onSaved,
+  open, onOpenChange, item, years, onSaved, onResetEditing,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   item: BaseWithYears | null;
   years: SchoolYear[];
   onSaved: () => void;
+  onResetEditing: () => void;
 }) {
   const sb = supabase as any;
   const { user } = useAuth();
