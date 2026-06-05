@@ -463,7 +463,7 @@ export function RelatorioDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data, observacao } = useStudentAssessment(alunoId);
+  const { data, justificativas, observacao } = useStudentAssessment(alunoId);
   const { user } = useAuth();
   const professorNome =
     (user?.user_metadata as any)?.full_name || user?.email || "Professor(a)";
@@ -478,7 +478,8 @@ export function RelatorioDialog({
 
   const avaliacoes = Object.entries(data).map(([k, nivel]) => {
     const [competencia, habilidade] = k.split("::");
-    return { competencia, habilidade, nivel };
+    const justificativa = nivel === "nao_aplica" ? justificativas[k] : undefined;
+    return { competencia, habilidade, nivel, justificativa };
   });
 
   async function handleGerarCompleto() {
