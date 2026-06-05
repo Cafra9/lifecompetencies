@@ -214,9 +214,19 @@ function EditDialog({
     setYearIds((prev) => prev.includes(id) ? prev.filter((y) => y !== id) : [...prev, id]);
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!titulo.trim() || !conteudo.trim()) return toast.error("Título e conteúdo são obrigatórios");
+  function resetForm() {
+    setTitulo("");
+    setDescricao("");
+    setConteudo("");
+    setAtivo(true);
+    setYearIds([]);
+  }
+
+  async function save(opts: { keepOpen: boolean }) {
+    if (!titulo.trim() || !conteudo.trim()) {
+      toast.error("Título e conteúdo são obrigatórios");
+      return;
+    }
     if (!user) return toast.error("Sessão inválida");
     setBusy(true);
     try {
@@ -246,12 +256,23 @@ function EditDialog({
       }
       toast.success(item ? "Base atualizada" : "Base criada");
       onSaved();
-      onOpenChange(false);
+      if (opts.keepOpen) {
+        // reset state so the next save creates a NEW base instead of overwriting
+        resetForm();
+        onResetEditing();
+      } else {
+        onOpenChange(false);
+      }
     } catch (err: any) {
       toast.error(err.message ?? "Erro ao salvar");
     } finally {
       setBusy(false);
     }
+  }
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    save({ keepOpen: false });
   }
 
   // group years by segmento for cleaner UI
