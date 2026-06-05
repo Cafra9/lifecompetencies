@@ -19,13 +19,15 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { Sparkles, Download, Check, Loader2, RotateCcw, Pencil, Eye } from "lucide-react";
+import { Sparkles, Download, Check, Loader2, RotateCcw, Pencil, Eye, MinusCircle } from "lucide-react";
 import {
   RUBRICA_INFANTIL,
   NIVEL_LABEL,
+  NIVEL_OU_NA_LABEL,
   type Nivel,
+  type NivelOuNA,
 } from "@/lib/rubrica-infantil";
-import { useStudentAssessment, type AssessmentMap } from "@/lib/assessments-store";
+import { useStudentAssessment, type AssessmentMap, type JustificativaMap } from "@/lib/assessments-store";
 import { gerarRelatorioAluno } from "@/lib/report.functions";
 import { useAuth } from "@/hooks/useAuth";
 import ispLogo from "@/assets/isp-logo.png";
@@ -38,6 +40,8 @@ const NIVEL_CELL: Record<Nivel, string> = {
   desenvolvendo: "bg-green-500 text-white",
   dominando: "bg-green-700 text-white",
 };
+
+const NA_CELL = "bg-muted text-muted-foreground border-dashed";
 
 function key(comp: string, hab: string) {
   return `${comp}::${hab}`;
