@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Copy, Mail, Pencil, Plus, Trash2, UserPlus, ShieldCheck, GraduationCap, Library } from "lucide-react";
+import { Copy, Mail, Pencil, Plus, Trash2, UserPlus, ShieldCheck, GraduationCap, Library, Archive, ArchiveRestore } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useIsAdmin, useIsDiretora, useIsCoordenador } from "@/hooks/useAuth";
 import { ROLE_LABELS, SEGMENT_LABELS, SEGMENTS, type AppRole, type SchoolSegment } from "@/lib/school-config";
