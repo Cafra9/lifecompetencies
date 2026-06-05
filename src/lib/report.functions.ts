@@ -325,7 +325,10 @@ Responda APENAS com o texto reescrito, sem aspas, sem prefácios.`;
       .join("\n");
 
     const promptTexto = `Você é um(a) coordenador(a) pedagógico(a) do programa iSP Life Competencies.
-Escreva um relatório pedagógico PERSONALIZADO, em português, em prosa fluida, descritiva e acolhedora, sobre o desenvolvimento do(a) aluno(a) "${data.alunoNome}" (${data.segmentoLabel}).
+Escreva um relatório pedagógico PERSONALIZADO, em português, em prosa fluida, sobre o desenvolvimento do(a) aluno(a) "${data.alunoNome}" (${data.segmentoLabel}).
+
+${instrucaoTom}
+
 
 OBJETIVO DE ESCRITA:
 - O texto deve soar como uma narrativa viva sobre a criança — suas interações, descobertas, curiosidades, vínculos e o ambiente em que está inserida — e NÃO como uma lista de rubricas.
