@@ -770,11 +770,29 @@ export function RelatorioDialog({
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-h-0 gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-xs text-muted-foreground">
-                {trechoLen > 0
-                  ? `${trechoLen} caractere(s) selecionados — "Regerar" reescreverá apenas a seleção.`
-                  : "Nenhuma seleção — \"Regerar\" reescreverá o relatório inteiro."}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Tom:</span>
+                <Select value={tom} onValueChange={(v) => setTom(v as TomRelatorio)}>
+                  <SelectTrigger className="h-7 w-[180px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(["descritivo", "objetivo", "afetivo"] as TomRelatorio[]).map((t) => (
+                      <SelectItem key={t} value={t} className="text-xs">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{TOM_LABEL[t]}</span>
+                          <span className="text-[10px] text-muted-foreground">{TOM_HINT[t]}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="hidden sm:inline text-[11px] text-muted-foreground">
+                  {trechoLen > 0
+                    ? `${trechoLen} caractere(s) selecionados`
+                    : "Sem seleção — regera o relatório inteiro"}
+                </span>
               </div>
               <Button
                 variant="ghost"
