@@ -65,7 +65,20 @@ export function EvidenceUploadDialog({ studentId, trigger, defaultRequirementId 
     setBusy(true);
     let arquivo_url: string | null = null;
     if (file) {
-      const path = `${user.id}/${studentId}/${Date.now()}_${file.name}`;
+      const dot = file.name.lastIndexOf(".");
+      const rawBase = dot > 0 ? file.name.slice(0, dot) : file.name;
+      const rawExt = dot > 0 ? file.name.slice(dot + 1) : "";
+      const sanitize = (s: string) =>
+        s
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9._-]+/g, "_")
+          .replace(/_+/g, "_")
+          .replace(/^[._-]+|[._-]+$/g, "");
+      const safeBase = (sanitize(rawBase) || "arquivo").slice(0, 80);
+      const safeExt = sanitize(rawExt).toLowerCase().slice(0, 10);
+      const safeName = safeExt ? `${safeBase}.${safeExt}` : safeBase;
+      const path = `${user.id}/${studentId}/${Date.now()}_${safeName}`;
       const { error: upErr } = await supabase.storage.from("student-evidences").upload(path, file);
       if (upErr) { toast.error(upErr.message); setBusy(false); return; }
       arquivo_url = path;
