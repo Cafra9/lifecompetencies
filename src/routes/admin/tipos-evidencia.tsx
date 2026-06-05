@@ -348,7 +348,7 @@ function useStateSync(
 ) {
   const id = item?.id ?? "__new__";
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  useReactEffect(() => {
+  useEffect(() => {
     s.setNome(item?.nome ?? "");
     s.setSlug(item?.slug ?? "");
     s.setDescricao(item?.descricao ?? "");
@@ -358,6 +358,3 @@ function useStateSync(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 }
-
-// re-export to avoid extra top-level import noise
-import { useEffect as useReactEffect } from "react";
