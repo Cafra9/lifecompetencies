@@ -72,27 +72,43 @@ Responda APENAS com o texto reescrito, sem aspas, sem prefácios.`;
       return callGateway(prompt, apiKey);
     }
 
-    const linhas = data.avaliacoes
+    const pontuadas = data.avaliacoes.filter((a) => a.nivel !== "nao_aplica");
+    const naoAplicaveis = data.avaliacoes.filter((a) => a.nivel === "nao_aplica");
+
+    const linhasPontuadas = pontuadas
       .map((a) => `- [${a.competencia} · ${a.habilidade}] nível: ${a.nivel}`)
+      .join("\n");
+
+    const linhasNA = naoAplicaveis
+      .map(
+        (a) =>
+          `- [${a.competencia} · ${a.habilidade}] NÃO SE APLICA${
+            a.justificativa ? ` — justificativa: ${a.justificativa}` : ""
+          }`,
+      )
       .join("\n");
 
     const obsBloco = data.observacaoProfessor.trim()
       ? `\nObservações do(a) professor(a) sobre o(a) aluno(a):\n"""\n${data.observacaoProfessor.trim()}\n"""\n`
       : "";
 
-    const prompt = `Você é um(a) coordenador(a) pedagógico(a) do programa iSP Life Competencies.
-Gere um relatório pedagógico em português, em prosa fluida e profissional, sobre o desenvolvimento do(a) aluno(a) "${data.alunoNome}" (${data.segmentoLabel}), a partir das avaliações abaixo (níveis: iniciando, desenvolvendo, dominando) e das observações do(a) professor(a).
+    const naBloco = linhasNA
+      ? `\nHabilidades marcadas como NÃO SE APLICA (sem pontuação):\n${linhasNA}\n`
+      : "";
 
-Avaliações:
-${linhas}
-${obsBloco}
+    const prompt = `Você é um(a) coordenador(a) pedagógico(a) do programa iSP Life Competencies.
+Gere um relatório pedagógico em português, em prosa fluida e profissional, sobre o desenvolvimento do(a) aluno(a) "${data.alunoNome}" (${data.segmentoLabel}), a partir das avaliações abaixo (níveis pontuáveis: iniciando, desenvolvendo, dominando) e das observações do(a) professor(a).
+
+Avaliações pontuadas:
+${linhasPontuadas || "(nenhuma habilidade pontuada)"}
+${naBloco}${obsBloco}
 Estruture o relatório com:
 1) Um parágrafo de abertura com visão geral.
-2) Um parágrafo por competência avaliada (Cognitivo, Global, Digital, Autoliderança, Interpessoal — apenas as que têm avaliações), destacando pontos fortes e áreas de crescimento.
+2) Um parágrafo por competência avaliada (Cognitivo, Global, Digital, Autoliderança, Interpessoal — apenas as que têm habilidades pontuadas), destacando pontos fortes e áreas de crescimento.
 3) Um parágrafo incorporando as observações do(a) professor(a), quando houver, de forma integrada à narrativa.
-4) Um parágrafo final com recomendações práticas e próximos passos.
+${linhasNA ? '4) Um parágrafo dedicado às "Habilidades não aplicáveis neste momento": liste as habilidades marcadas como NÃO SE APLICA citando a justificativa do(a) professor(a) quando houver, sem atribuir qualquer nível ou pontuação. Explique de forma transparente que essas habilidades foram deliberadamente excluídas da avaliação neste ciclo.\n5) Um parágrafo final com recomendações práticas e próximos passos.' : "4) Um parágrafo final com recomendações práticas e próximos passos."}
 
-Use tom acolhedor, evite jargão técnico desnecessário, não use bullets nem markdown — apenas parágrafos separados por linha em branco. Não invente avaliações que não foram informadas.`;
+Use tom acolhedor, evite jargão técnico desnecessário, não use bullets nem markdown — apenas parágrafos separados por linha em branco. Não invente avaliações que não foram informadas. NUNCA atribua nível pontuável a uma habilidade marcada como NÃO SE APLICA.`;
 
     return callGateway(prompt, apiKey);
   });
