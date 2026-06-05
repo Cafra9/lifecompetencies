@@ -49,10 +49,37 @@ function AvaliacoesPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("classes")
-        .select("id, nome, arquivada")
+        .select("id, nome, arquivada, school_year_id")
         .eq("arquivada", false)
         .order("nome");
-      return (data ?? []) as { id: string; nome: string }[];
+      return (data ?? []) as { id: string; nome: string; school_year_id: string | null }[];
+    },
+  });
+
+  const turma = turmas.find((t) => t.id === turmaId);
+  const schoolYearId = turma?.school_year_id ?? null;
+
+  const { data: requirements = [] } = useQuery<RequirementItem[]>({
+    queryKey: ["turma-requirements", schoolYearId],
+    enabled: !!schoolYearId,
+    queryFn: async () => {
+      const sb = supabase as any;
+      const { data } = await sb
+        .from("year_requirements")
+        .select("obrigatorio, orientacao, requirement:evidence_requirements(id, nome, ordem, ativo, allowed_extensions)")
+        .eq("school_year_id", schoolYearId);
+      const rows = (data ?? []) as any[];
+      return rows
+        .filter((r) => r.requirement?.ativo !== false)
+        .map((r) => ({
+          id: r.requirement.id,
+          nome: r.requirement.nome,
+          obrigatorio: r.obrigatorio,
+          orientacao: r.orientacao,
+          allowed_extensions: r.requirement.allowed_extensions,
+          _ordem: r.requirement.ordem ?? 0,
+        }))
+        .sort((a, b) => a._ordem - b._ordem || a.nome.localeCompare(b.nome));
     },
   });
 
