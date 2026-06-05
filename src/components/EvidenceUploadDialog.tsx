@@ -43,16 +43,22 @@ export function EvidenceUploadDialog({ studentId, trigger, defaultRequirementId 
     setTitulo(""); setDescricao(""); setPeriodo(""); setFile(null);
   }
 
+  const selectedReq = (requirements as any[] | undefined)?.find((r) => r.id === requirementId);
+  const allowedExts: string[] = selectedReq?.allowed_extensions?.length
+    ? selectedReq.allowed_extensions
+    : ["pdf","docx","pptx","xlsx","jpg","jpeg","png","webp","mp4","mov","zip"];
+  const acceptAttr = allowedExts.map((e) => `.${e}`).join(",");
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!user || !requirementId || !titulo.trim()) return;
-    const req = (requirements as any[] | undefined)?.find((r) => r.id === requirementId);
+    const req = selectedReq;
     if (!req) return toast.error("Categoria inválida");
 
     if (file) {
       const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-      if (!ALLOWED_EXT.has(ext)) {
-        return toast.error(`Tipo de arquivo não permitido: .${ext}`);
+      if (!allowedExts.includes(ext)) {
+        return toast.error(`Tipo de arquivo não permitido para "${req.nome}": .${ext}`);
       }
     }
 
