@@ -65,6 +65,9 @@ export function AvaliarDialog({
   const [localObs, setLocalObs] = useState<string>(observacao);
   const [openKey, setOpenKey] = useState<string>("");
   const hydratedRef = useRef(false);
+  const dirtyRef = useRef(false);
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   // Flat sequential list of all habilidades (for "expand next" behavior).
   const flat = useMemo(
@@ -80,27 +83,34 @@ export function AvaliarDialog({
     [],
   );
 
+  // Reset de flags ao abrir.
   useEffect(() => {
     if (open) {
-      setLocal(data);
-      setLocalJust(justificativas);
-      setLocalObs(observacao);
-      // Abre automaticamente a primeira habilidade ainda sem resposta
-      // para que o professor já possa começar.
-      const firstUnanswered = flat.find((it) => !(it.k in data));
-      setOpenKey(firstUnanswered?.k ?? "");
       hydratedRef.current = false;
-      requestAnimationFrame(() => {
-        hydratedRef.current = true;
-      });
+      dirtyRef.current = false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Auto-save contínuo: nada se perde se o professor fechar a aba
-  // ou sair do site no meio do preenchimento.
+  // Hidrata `local` com os dados vindos do servidor SEMPRE que chegarem,
+  // desde que o professor ainda não tenha editado nada localmente.
+  // Isso evita o bug em que `local` inicializa como {} (cache vazio) e o
+  // auto-save apaga todas as avaliações já registradas.
   useEffect(() => {
-    if (!open || fechado || !hydratedRef.current) return;
+    if (!open || dirtyRef.current) return;
+    setLocal(data);
+    setLocalJust(justificativas);
+    setLocalObs(observacao);
+    const firstUnanswered = flat.find((it) => !(it.k in data));
+    setOpenKey(firstUnanswered?.k ?? "");
+    requestAnimationFrame(() => {
+      hydratedRef.current = true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, data, justificativas, observacao]);
+
+  // Auto-save contínuo (somente após hidratação E edição local).
+  useEffect(() => {
+    if (!open || fechado || !hydratedRef.current || !dirtyRef.current) return;
     save(local, localJust, localObs);
   }, [local, localJust, localObs, open, fechado, save]);
 
@@ -109,18 +119,31 @@ export function AvaliarDialog({
   const naAplica = Object.values(local).filter((v) => v === "nao_aplica").length;
   const allAnswered = preenchidos + naAplica >= total;
 
+  function scrollToKey(k: string) {
+    // Aguarda o Accordion abrir antes de calcular a posição.
+    setTimeout(() => {
+      const el = itemRefs.current[k];
+      const scroller = scrollerRef.current;
+      if (!el || !scroller) return;
+      const elTop = el.getBoundingClientRect().top;
+      const scTop = scroller.getBoundingClientRect().top;
+      scroller.scrollBy({ top: elTop - scTop - 8, behavior: "smooth" });
+    }, 140);
+  }
+
   function advanceFrom(currentKey: string) {
     const idx = flat.findIndex((x) => x.k === currentKey);
-    // Próxima habilidade ainda sem resposta a partir do índice atual;
-    // se não houver, vai para a próxima da lista; se for a última, fecha.
     for (let i = idx + 1; i < flat.length; i++) {
       if (!(flat[i].k in local)) {
         setOpenKey(flat[i].k);
+        scrollToKey(flat[i].k);
         return;
       }
     }
     if (idx + 1 < flat.length) {
-      setOpenKey(flat[idx + 1].k);
+      const next = flat[idx + 1].k;
+      setOpenKey(next);
+      scrollToKey(next);
     } else {
       setOpenKey("");
       toast.success("Última habilidade respondida — revise e salve a avaliação.");
@@ -130,21 +153,14 @@ export function AvaliarDialog({
   function setNivel(comp: string, hab: string, nivel: NivelOuNA) {
     if (fechado) return;
     const k = key(comp, hab);
+    dirtyRef.current = true;
     setLocal((prev) => ({ ...prev, [k]: nivel }));
     // "Não se aplica" não exige justificativa — limpa qualquer texto residual.
-    if (nivel === "nao_aplica") {
-      setLocalJust((prev) => {
-        if (!(k in prev)) return prev;
-        const { [k]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      setLocalJust((prev) => {
-        if (!(k in prev)) return prev;
-        const { [k]: _, ...rest } = prev;
-        return rest;
-      });
-    }
+    setLocalJust((prev) => {
+      if (!(k in prev)) return prev;
+      const { [k]: _, ...rest } = prev;
+      return rest;
+    });
     // Avança automaticamente para a próxima habilidade.
     advanceFrom(k);
   }
@@ -188,6 +204,7 @@ export function AvaliarDialog({
               size="sm"
               className="h-7 gap-1"
               onClick={() => {
+                dirtyRef.current = true;
                 setLocal({});
                 setLocalJust({});
                 setLocalObs("");
@@ -198,7 +215,7 @@ export function AvaliarDialog({
           )}
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto pr-3 -mr-3">
+        <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto pr-3 -mr-3">
           <div className="space-y-5">
             {RUBRICA_INFANTIL.map((c) => {
               const cor = corDaCompetencia(c.competencia);
@@ -223,50 +240,50 @@ export function AvaliarDialog({
                       <AccordionItem
                         key={h.habilidade}
                         value={k}
-                        className={`rounded-md border bg-card data-[state=open]:shadow-sm ${cur ? "" : ""}`}
+                        ref={(el) => {
+                          itemRefs.current[k] = el as unknown as HTMLDivElement | null;
+                        }}
+                        className="rounded-md border bg-card data-[state=open]:shadow-sm"
                       >
-                        <div className="flex items-center gap-2 pl-3 pr-2 py-1">
-                          <AccordionTrigger className="flex-1 py-2 hover:no-underline">
-                            <div className="flex items-center gap-2 text-left">
+                        <div className="flex items-center gap-2 pl-3 pr-2">
+                          <AccordionTrigger className="flex-1 py-1.5 hover:no-underline">
+                            <div className="flex items-center gap-2 text-left min-w-0">
                               <span
-                                className={`h-2.5 w-2.5 rounded-full ${cor.swatch} ${dotOpacity}`}
+                                className={`h-2 w-2 rounded-full shrink-0 ${cor.swatch} ${dotOpacity}`}
                               />
-                              <span className="text-sm font-medium">{h.habilidade}</span>
-                              {cur && (
+                              <span className="text-sm font-medium truncate">{h.habilidade}</span>
+                              {cur && cur !== "nao_aplica" && (
                                 <Badge
                                   variant="outline"
-                                  className={`ml-1 text-[10px] uppercase border-transparent ${
-                                    cur === "nao_aplica" ? NA_CELL : NIVEL_CELL[cur as Nivel]
-                                  }`}
+                                  className={`ml-1 text-[10px] uppercase border-transparent ${NIVEL_CELL[cur as Nivel]}`}
                                 >
                                   {NIVEL_OU_NA_LABEL[cur]}
                                 </Badge>
                               )}
                             </div>
                           </AccordionTrigger>
+                          {!fechado && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setNivel(c.competencia, h.habilidade, "nao_aplica");
+                              }}
+                              title="Marcar como Não se aplica"
+                              className={`shrink-0 inline-flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors hover:bg-muted/60 ${
+                                cur === "nao_aplica"
+                                  ? "bg-muted text-foreground ring-1 ring-foreground/30"
+                                  : "bg-card text-muted-foreground"
+                              }`}
+                            >
+                              <MinusCircle className="h-3 w-3" />
+                              N/A
+                              {cur === "nao_aplica" && <Check className="h-3 w-3" />}
+                            </button>
+                          )}
                         </div>
 
                         <AccordionContent className="px-3 pb-3 space-y-3">
-                          {/* Botão único "Não se aplica" — seleção de nível ocorre clicando nos cards abaixo */}
-                          <div className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 -mx-3 px-3 pt-1 pb-2 border-b">
-                            <div className="flex justify-end">
-                              <button
-                                type="button"
-                                onClick={() => setNivel(c.competencia, h.habilidade, "nao_aplica")}
-                                className={`rounded-md border border-dashed px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors hover:bg-muted/60 ${
-                                  cur === "nao_aplica"
-                                    ? "bg-muted ring-2 ring-offset-1 ring-foreground/20"
-                                    : "bg-card text-muted-foreground"
-                                }`}
-                              >
-                                <span className="inline-flex items-center justify-center gap-1">
-                                  <MinusCircle className="h-3.5 w-3.5" />
-                                  Não se aplica
-                                  {cur === "nao_aplica" && <Check className="h-3.5 w-3.5" />}
-                                </span>
-                              </button>
-                            </div>
-                          </div>
 
                           {/* Descritores de referência (clicáveis) */}
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -321,7 +338,7 @@ export function AvaliarDialog({
               </p>
               <Textarea
                 value={localObs}
-                onChange={(e) => setLocalObs(e.target.value)}
+                onChange={(e) => { dirtyRef.current = true; setLocalObs(e.target.value); }}
                 placeholder="Registre observações gerais sobre o desenvolvimento, comportamento, evidências em sala e recomendações para este aluno."
                 className="min-h-[140px] text-sm"
                 maxLength={4000}
