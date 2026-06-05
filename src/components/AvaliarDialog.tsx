@@ -337,7 +337,7 @@ export function AvaliarDialog({
               </p>
               <Textarea
                 value={localObs}
-                onChange={(e) => setLocalObs(e.target.value)}
+                onChange={(e) => { dirtyRef.current = true; setLocalObs(e.target.value); }}
                 placeholder="Registre observações gerais sobre o desenvolvimento, comportamento, evidências em sala e recomendações para este aluno."
                 className="min-h-[140px] text-sm"
                 maxLength={4000}
