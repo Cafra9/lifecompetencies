@@ -283,7 +283,6 @@ function StudentEvidencesCard({
     () => new Set(evidences.map((e) => e.requirement_id).filter(Boolean)),
     [evidences],
   );
-
   async function openFile(path: string, download = false) {
     const { data, error } = await supabase.storage
       .from("student-evidences")
