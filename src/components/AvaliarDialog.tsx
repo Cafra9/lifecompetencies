@@ -204,6 +204,7 @@ export function AvaliarDialog({
               size="sm"
               className="h-7 gap-1"
               onClick={() => {
+                dirtyRef.current = true;
                 setLocal({});
                 setLocalJust({});
                 setLocalObs("");
