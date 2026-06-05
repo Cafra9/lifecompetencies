@@ -403,8 +403,11 @@ function YearRequirementsTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Exigências por ano</CardTitle>
-        <CardDescription>Selecione um ano e marque quais evidências serão exigidas no relatório final.</CardDescription>
+        <CardTitle>Exigências complementares por ano</CardTitle>
+        <CardDescription>
+          Selecione um ano e marque as evidências complementares exigidas.
+          A Rubrica é obrigatória para todos os anos e sempre será considerada na geração do relatório — não precisa ser configurada aqui.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Select value={selectedYear} onValueChange={setSelectedYear}>
