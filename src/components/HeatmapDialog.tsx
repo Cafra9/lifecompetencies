@@ -35,7 +35,7 @@ export function HeatmapDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data } = useStudentAssessment(alunoId);
+  const { data, justificativas } = useStudentAssessment(alunoId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
