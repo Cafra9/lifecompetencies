@@ -209,14 +209,18 @@ function AlunoCard({
   onAvaliar,
   onRelatorio,
   onHeatmap,
+  onEvidences,
 }: {
   aluno: { id: string; nome: string; ano: string };
   onAvaliar: () => void;
   onRelatorio: () => void;
   onHeatmap: () => void;
+  onEvidences: () => void;
 }) {
   const { data, fechado, setFechadoStatus } = useStudentAssessment(aluno.id);
   const c = countByLevel(data);
+  const { data: evidenceCount = 0 } = useEvidenceCount(aluno.id);
+
 
   function toggleFechado() {
     if (fechado) {
