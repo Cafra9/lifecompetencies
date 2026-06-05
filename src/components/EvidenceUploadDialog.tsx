@@ -120,8 +120,8 @@ export function EvidenceUploadDialog({ studentId, trigger, defaultRequirementId 
           </div>
           <div>
             <Label>Arquivo</Label>
-            <Input type="file" accept={EVIDENCE_FILE_ACCEPT} onChange={(e) => setFile(e.target.files?.[0] || null)} />
-            <p className="text-xs text-muted-foreground mt-1">PDF, DOCX, PPTX, XLSX, JPG, PNG, WEBP, MP4, MOV, ZIP</p>
+            <Input type="file" accept={acceptAttr} onChange={(e) => setFile(e.target.files?.[0] || null)} />
+            <p className="text-xs text-muted-foreground mt-1">Aceito: {allowedExts.map(e => `.${e}`).join(", ")}</p>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={busy || !requirementId || !titulo.trim()}>
