@@ -543,6 +543,7 @@ export function RelatorioDialog({
   const segmentoLabel = "Educação Infantil (4-7 anos)";
 
   const [texto, setTexto] = useState("");
+  const [tom, setTom] = useState<TomRelatorio>("descritivo");
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
