@@ -276,8 +276,11 @@ function RequirementsTab() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Catálogo de exigências</CardTitle>
-          <CardDescription>Tipos de evidência que podem ser exigidos em cada ano (Rubricas, Portfólio, Fotos, etc.).</CardDescription>
+          <CardTitle>Catálogo de exigências complementares</CardTitle>
+          <CardDescription>
+            Evidências complementares que podem ser exigidas em cada ano (Portfólio, Fotos, Vídeos, Produções, etc.).
+            A Rubrica é obrigatória para todos os anos e não aparece aqui.
+          </CardDescription>
         </div>
         <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
           <DialogTrigger asChild>
