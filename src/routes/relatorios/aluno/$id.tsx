@@ -28,6 +28,20 @@ type Evidence = {
 type StudentAssessment = { id: string; aluno_id: string; competencia: string; habilidade: string; nivel: string; user_id: string; created_at: string };
 type ProfileLite = { id: string; nome: string };
 
+function isNotApplicable(nivel: string) {
+  return nivel === "not_applicable" || nivel === "nao_aplica";
+}
+
+function nivelLabel(nivel: string) {
+  if (isNotApplicable(nivel)) return "N/A";
+  return nivel;
+}
+
+function nivelClass(nivel: string, cor: ReturnType<typeof corDaCompetencia>) {
+  if (isNotApplicable(nivel)) return "bg-muted text-muted-foreground border border-dashed";
+  return cor.cell[nivel as "iniciando" | "desenvolvendo" | "dominando"] ?? "bg-muted text-muted-foreground";
+}
+
 function RelatorioAlunoPage() {
   const { id } = useParams({ from: "/relatorios/aluno/$id" });
   const [student, setStudent] = useState<Student | null>(null);
@@ -208,7 +222,7 @@ function RelatorioAlunoPage() {
                               <li key={r.id} className="flex justify-between border-b py-1.5">
                                 <span>
                                   <span className={`font-medium ${cor.text}`}>{r.competencia}</span> · {r.habilidade}{" "}
-                                  <Badge className={cor.cell[r.nivel as "iniciando" | "desenvolvendo" | "dominando"]}>{r.nivel}</Badge>
+                                  <Badge className={nivelClass(r.nivel, cor)}>{nivelLabel(r.nivel)}</Badge>
                                 </span>
                                 <span className="text-xs text-muted-foreground">{profById[r.user_id] ?? "—"} · {new Date(r.created_at).toLocaleDateString()}</span>
                               </li>
@@ -249,7 +263,7 @@ function RelatorioAlunoPage() {
                           {rubricasComp.map((r) => (
                             <li key={r.id} className="flex justify-between border-b py-1.5">
                               <span><span className="font-medium">{r.habilidade}</span>{" "}
-                                <Badge className={cor.cell[r.nivel as "iniciando" | "desenvolvendo" | "dominando"]}>{r.nivel}</Badge>
+                                <Badge className={nivelClass(r.nivel, cor)}>{nivelLabel(r.nivel)}</Badge>
                               </span>
                               <span className="text-xs text-muted-foreground">{profById[r.user_id] ?? "—"} · {new Date(r.created_at).toLocaleDateString()}</span>
                             </li>
@@ -273,7 +287,7 @@ function RelatorioAlunoPage() {
                 {rubrics.map((r) => (
                   <div key={r.id} className="border-b pb-2 text-sm">
                     <div className="font-medium">Rubrica · {r.competencia} / {r.habilidade}</div>
-                    <div className="text-xs text-muted-foreground">Nível: {r.nivel} · {profById[r.user_id] ?? "—"} · {new Date(r.created_at).toLocaleDateString()}</div>
+                    <div className="text-xs text-muted-foreground">Nível: {nivelLabel(r.nivel)} · {profById[r.user_id] ?? "—"} · {new Date(r.created_at).toLocaleDateString()}</div>
                   </div>
                 ))}
                 {evidences.length + rubrics.length === 0 && <p className="text-muted-foreground text-sm">Nenhum registro.</p>}

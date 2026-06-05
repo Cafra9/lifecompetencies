@@ -78,7 +78,7 @@ export function AvaliarDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data, justificativas, observacao, fechado, save } = useStudentAssessment(alunoId);
+  const { data, justificativas, observacao, fechado, save, saveNow } = useStudentAssessment(alunoId);
   const [local, setLocal] = useState<AssessmentMap>(data);
   const [localJust, setLocalJust] = useState<JustificativaMap>(justificativas);
   const [localObs, setLocalObs] = useState<string>(observacao);
@@ -173,13 +173,12 @@ export function AvaliarDialog({
     if (fechado) return;
     const k = key(comp, hab);
     dirtyRef.current = true;
-    setLocal((prev) => ({ ...prev, [k]: nivel }));
+    const nextLocal = { ...local, [k]: nivel };
+    const { [k]: _, ...nextJust } = localJust;
+    setLocal(nextLocal);
     // "Não se aplica" não exige justificativa — limpa qualquer texto residual.
-    setLocalJust((prev) => {
-      if (!(k in prev)) return prev;
-      const { [k]: _, ...rest } = prev;
-      return rest;
-    });
+    setLocalJust(nextJust);
+    void saveNow(nextLocal, nextJust, localObs);
     // Avança automaticamente para a próxima habilidade.
     advanceFrom(k);
   }
@@ -271,10 +270,14 @@ export function AvaliarDialog({
                                 className={`h-2 w-2 rounded-full shrink-0 ${cor.swatch} ${dotOpacity}`}
                               />
                               <span className="text-sm font-medium truncate">{h.habilidade}</span>
-                              {cur && cur !== "nao_aplica" && (
+                              {cur && (
                                 <Badge
                                   variant="outline"
-                                  className={`ml-1 text-[10px] uppercase border-transparent ${NIVEL_CELL[cur as Nivel]}`}
+                                  className={`ml-1 text-[10px] uppercase ${
+                                    cur === "nao_aplica"
+                                      ? NA_CELL
+                                      : `border-transparent ${NIVEL_CELL[cur as Nivel]}`
+                                  }`}
                                 >
                                   {NIVEL_OU_NA_LABEL[cur]}
                                 </Badge>

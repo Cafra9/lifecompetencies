@@ -125,14 +125,16 @@ async function persist(
   avaliacoes: AssessmentMap,
   justificativas: JustificativaMap,
   observacao: string,
+  deleteMissing = true,
 ) {
   // 1) meta
-  await supabase
+  const { error: metaError } = await supabase
     .from("student_assessment_meta")
     .upsert(
       { user_id: userId, aluno_id: alunoId, observacao },
       { onConflict: "user_id,aluno_id" },
     );
+  if (metaError) throw metaError;
 
   // 2) upsert current cells
   const entries = Object.entries(avaliacoes);
@@ -150,29 +152,33 @@ async function persist(
         justificativa,
       };
     });
-    await supabase
+    const { error: upsertError } = await supabase
       .from("student_assessments")
       .upsert(rows, { onConflict: "user_id,aluno_id,competencia,habilidade" });
+    if (upsertError) throw upsertError;
   }
 
   // 3) delete cells the professor removed
-  const { data: existing } = await supabase
+  if (!deleteMissing) return;
+  const { data: existing, error: selectError } = await supabase
     .from("student_assessments")
     .select("competencia, habilidade")
     .eq("user_id", userId)
     .eq("aluno_id", alunoId);
+  if (selectError) throw selectError;
   const wanted = new Set(Object.keys(avaliacoes));
   const toDelete = (existing ?? []).filter(
     (r: any) => !wanted.has(`${r.competencia}::${r.habilidade}`),
   );
   for (const r of toDelete) {
-    await supabase
+    const { error: deleteError } = await supabase
       .from("student_assessments")
       .delete()
       .eq("user_id", userId)
       .eq("aluno_id", alunoId)
       .eq("competencia", (r as any).competencia)
       .eq("habilidade", (r as any).habilidade);
+    if (deleteError) throw deleteError;
   }
 }
 
@@ -227,12 +233,38 @@ export function useStudentAssessment(alunoId: string) {
         pending.current = null;
         if (!p) return;
         try {
-          await persist(userId, alunoId, p.avaliacoes, p.justificativas, p.observacao);
+        await persist(userId, alunoId, p.avaliacoes, p.justificativas, p.observacao);
           qc.invalidateQueries({ queryKey: ["all-student-assessments", userId] });
         } catch (e) {
           console.error("Falha ao salvar avaliação", e);
         }
       }, 600);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId, alunoId, qc],
+  );
+
+  const saveNow = useCallback(
+    async (avaliacoes: AssessmentMap, justificativas: JustificativaMap = {}, observacao = "") => {
+      if (!userId) return;
+      qc.setQueryData(key, (old: StudentAssessment | undefined) => ({
+        ...(old ?? EMPTY),
+        alunoId,
+        avaliacoes,
+        justificativas,
+        observacao,
+      }));
+      pending.current = null;
+      if (timer.current) {
+        clearTimeout(timer.current);
+        timer.current = null;
+      }
+      try {
+        await persist(userId, alunoId, avaliacoes, justificativas, observacao, false);
+        qc.invalidateQueries({ queryKey: ["all-student-assessments", userId] });
+      } catch (e) {
+        console.error("Falha ao salvar avaliação imediatamente", e);
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [userId, alunoId, qc],
@@ -261,6 +293,7 @@ export function useStudentAssessment(alunoId: string) {
     observacao: current.observacao,
     fechado: current.fechado,
     save,
+    saveNow,
     setFechadoStatus,
   };
 }
