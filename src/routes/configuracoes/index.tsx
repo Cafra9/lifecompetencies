@@ -239,7 +239,8 @@ function RequirementsTab() {
 
   const refresh = async () => {
     setLoading(true);
-    const { data } = await sb.from("evidence_requirements").select("*").order("nome");
+    // Rubrica é obrigatória para todos os anos e não é gerenciada aqui (sempre ativa).
+    const { data } = await sb.from("evidence_requirements").select("*").neq("slug", "rubrica").order("nome");
     setItems((data ?? []) as EvidenceReq[]);
     setLoading(false);
   };
@@ -275,8 +276,11 @@ function RequirementsTab() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Catálogo de exigências</CardTitle>
-          <CardDescription>Tipos de evidência que podem ser exigidos em cada ano (Rubricas, Portfólio, Fotos, etc.).</CardDescription>
+          <CardTitle>Catálogo de exigências complementares</CardTitle>
+          <CardDescription>
+            Evidências complementares que podem ser exigidas em cada ano (Portfólio, Fotos, Vídeos, Produções, etc.).
+            A Rubrica é obrigatória para todos os anos e não aparece aqui.
+          </CardDescription>
         </div>
         <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
           <DialogTrigger asChild>
@@ -288,8 +292,8 @@ function RequirementsTab() {
             </DialogHeader>
             {editing && (
               <div className="space-y-3">
-                <div><Label>Nome</Label><Input value={editing.nome ?? ""} onChange={(e) => setEditing({ ...editing, nome: e.target.value })} placeholder="Rubricas" /></div>
-                <div><Label>Slug</Label><Input value={editing.slug ?? ""} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} placeholder="rubrica" /></div>
+                <div><Label>Nome</Label><Input value={editing.nome ?? ""} onChange={(e) => setEditing({ ...editing, nome: e.target.value })} placeholder="Portfólio" /></div>
+                <div><Label>Slug</Label><Input value={editing.slug ?? ""} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} placeholder="portfolio" /></div>
                 <div><Label>Descrição</Label><Textarea value={editing.descricao ?? ""} onChange={(e) => setEditing({ ...editing, descricao: e.target.value })} /></div>
                 <div className="flex items-center gap-2"><Switch checked={editing.ativo ?? true} onCheckedChange={(v) => setEditing({ ...editing, ativo: v })} /><Label>Ativo</Label></div>
               </div>
@@ -347,7 +351,7 @@ function YearRequirementsTab() {
     setLoading(true);
     const [sy, er, yr, cs] = await Promise.all([
       sb.from("school_years").select("*").eq("ativo", true).order("ordem"),
-      sb.from("evidence_requirements").select("*").eq("ativo", true).order("nome"),
+      sb.from("evidence_requirements").select("*").eq("ativo", true).neq("slug", "rubrica").order("nome"),
       sb.from("year_requirements").select("*"),
       sb.from("coordinator_segments").select("*"),
     ]);
@@ -399,8 +403,11 @@ function YearRequirementsTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Exigências por ano</CardTitle>
-        <CardDescription>Selecione um ano e marque quais evidências serão exigidas no relatório final.</CardDescription>
+        <CardTitle>Exigências complementares por ano</CardTitle>
+        <CardDescription>
+          Selecione um ano e marque as evidências complementares exigidas.
+          A Rubrica é obrigatória para todos os anos e sempre será considerada na geração do relatório — não precisa ser configurada aqui.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Select value={selectedYear} onValueChange={setSelectedYear}>

@@ -66,11 +66,11 @@ function AvaliacoesPage() {
       const sb = supabase as any;
       const { data } = await sb
         .from("year_requirements")
-        .select("obrigatorio, orientacao, requirement:evidence_requirements(id, nome, ordem, ativo, allowed_extensions)")
+        .select("obrigatorio, orientacao, requirement:evidence_requirements(id, nome, slug, ordem, ativo, allowed_extensions)")
         .eq("school_year_id", schoolYearId);
       const rows = (data ?? []) as any[];
       return rows
-        .filter((r) => r.requirement?.ativo !== false)
+        .filter((r) => r.requirement?.ativo !== false && r.requirement?.slug !== "rubrica")
         .map((r) => ({
           id: r.requirement.id,
           nome: r.requirement.nome,

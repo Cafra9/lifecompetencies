@@ -13,6 +13,13 @@ const KnowledgeBaseSchema = z.object({
   conteudo: z.string().min(1).max(8000),
 });
 
+const EvidenciaSchema = z.object({
+  titulo: z.string().min(1).max(200),
+  categoria: z.string().min(1).max(120),
+  descricao: z.string().max(2000).optional().default(""),
+  arquivo: z.string().max(300).optional().default(""),
+});
+
 const FullInputSchema = z.object({
   mode: z.literal("full"),
   alunoNome: z.string().min(1).max(120),
@@ -21,6 +28,7 @@ const FullInputSchema = z.object({
   observacaoProfessor: z.string().max(4000).optional().default(""),
   avaliacoes: z.array(AvaliacaoSchema).min(1).max(50),
   basesConhecimento: z.array(KnowledgeBaseSchema).max(20).optional().default([]),
+  evidencias: z.array(EvidenciaSchema).max(60).optional().default([]),
 });
 
 const RewriteInputSchema = z.object({
@@ -108,20 +116,37 @@ Responda APENAS com o texto reescrito, sem aspas, sem prefácios.`;
           .join("\n\n")}\n`
       : "";
 
-    const prompt = `Você é um(a) coordenador(a) pedagógico(a) do programa iSP Life Competencies.
-Gere um relatório pedagógico em português, em prosa fluida e profissional, sobre o desenvolvimento do(a) aluno(a) "${data.alunoNome}" (${data.segmentoLabel}), a partir das avaliações abaixo (níveis pontuáveis: iniciando, desenvolvendo, dominando) e das observações do(a) professor(a).
+    const evidenciasBloco = data.evidencias.length
+      ? `\nEvidências anexadas pelo(a) professor(a) ao(à) aluno(a) (use para enriquecer, justificar e exemplificar as avaliações das rubricas — NÃO substitua a avaliação do professor; quando relevante, mencione naturalmente que há evidência registrada, ex.: "registros do portfólio mostram…", sem listar arquivos nem URLs):\n${data.evidencias
+          .map(
+            (e, i) =>
+              `- Evidência ${i + 1} [${e.categoria}] "${e.titulo}"${e.arquivo ? ` (arquivo: ${e.arquivo})` : ""}${e.descricao ? `\n  Descrição: ${e.descricao}` : ""}`,
+          )
+          .join("\n")}\n`
+      : "";
 
-Avaliações pontuadas:
+    const prompt = `Você é um(a) coordenador(a) pedagógico(a) do programa iSP Life Competencies.
+Gere um relatório pedagógico em português, em prosa fluida e profissional, sobre o desenvolvimento do(a) aluno(a) "${data.alunoNome}" (${data.segmentoLabel}).
+
+HIERARQUIA DAS FONTES (siga esta prioridade ao construir a narrativa):
+1) Avaliações das rubricas preenchidas pelo(a) professor(a) — FONTE PRINCIPAL e definitiva do nível de desenvolvimento. Níveis pontuáveis: iniciando, desenvolvendo, dominando.
+2) Evidências anexadas ao aluno (portfólios, relatórios, produções, fotos, vídeos, avaliações acadêmicas, observações comportamentais, projetos etc.) — usadas para enriquecer, justificar e exemplificar as avaliações, relacionando-as às competências quando pertinente.
+3) Observações do(a) professor(a) — contexto qualitativo adicional.
+4) Bases de Conhecimento vinculadas ao ano escolar — referências para contextualização e ajuste de recomendações.
+
+Nunca infira ou altere os níveis das rubricas a partir das evidências. A avaliação profissional do(a) professor(a) prevalece; evidências e bases servem de suporte, contextualização e aprofundamento.
+
+Avaliações pontuadas (FONTE PRINCIPAL):
 ${linhasPontuadas || "(nenhuma habilidade pontuada)"}
-${naBloco}${obsBloco}${basesBloco}
+${naBloco}${obsBloco}${evidenciasBloco}${basesBloco}
 Estruture o relatório com:
 1) Um parágrafo de abertura com visão geral.
-2) Um parágrafo por competência avaliada (Cognitivo, Global, Digital, Autoliderança, Interpessoal — apenas as que têm habilidades pontuadas), destacando pontos fortes e áreas de crescimento.
+2) Um parágrafo por competência avaliada (Cognitivo, Global, Digital, Autoliderança, Interpessoal — apenas as que têm habilidades pontuadas), destacando pontos fortes e áreas de crescimento, e — quando houver evidência pertinente — ancorando observações em evidências apresentadas (sem listá-las).
 3) Um parágrafo incorporando as observações do(a) professor(a), quando houver, de forma integrada à narrativa.
 ${linhasNA ? '4) Um parágrafo dedicado às "Habilidades não aplicáveis neste momento": liste as habilidades marcadas como NÃO SE APLICA citando a justificativa do(a) professor(a) quando houver, sem atribuir qualquer nível ou pontuação. Explique de forma transparente que essas habilidades foram deliberadamente excluídas da avaliação neste ciclo.\n5) Um parágrafo final com recomendações práticas e próximos passos.' : "4) Um parágrafo final com recomendações práticas e próximos passos."}
 
 ${data.basesConhecimento.length ? "Considere as Bases de Conhecimento informadas como critério adicional ao analisar o desenvolvimento, ajustando recomendações e expectativas conforme essas referências, sem reproduzir o texto delas." : ""}
-Use tom acolhedor, evite jargão técnico desnecessário, não use bullets nem markdown — apenas parágrafos separados por linha em branco. Não invente avaliações que não foram informadas. NUNCA atribua nível pontuável a uma habilidade marcada como NÃO SE APLICA.`;
+Use tom acolhedor, evite jargão técnico desnecessário, não use bullets nem markdown — apenas parágrafos separados por linha em branco. Não invente avaliações que não foram informadas. NUNCA atribua nível pontuável a uma habilidade marcada como NÃO SE APLICA. Não cite nomes de arquivos nem URLs no texto final.`;
 
     return callGateway(prompt, apiKey);
   });
