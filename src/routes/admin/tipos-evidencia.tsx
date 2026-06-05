@@ -63,9 +63,11 @@ function Page() {
   const { data: items, isLoading } = useQuery({
     queryKey: ["evidence-requirements-admin"],
     queryFn: async () => {
+      // Rubrica é obrigatória em todos os anos e não é configurável aqui (não aparece como tipo opcional).
       const { data, error } = await sb
         .from("evidence_requirements")
         .select("*")
+        .neq("slug", "rubrica")
         .order("ordem")
         .order("nome");
       if (error) throw error;
