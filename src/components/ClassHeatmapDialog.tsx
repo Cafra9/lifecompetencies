@@ -107,20 +107,23 @@ export function ClassHeatmapDialog({
             <tbody>
               {alunos.map((a) => {
                 const av = all[a.id]?.avaliacoes ?? {};
+                const justs = all[a.id]?.justificativas ?? {};
                 return (
                   <tr key={a.id}>
                     <td className="sticky left-0 z-10 bg-background border-b border-r px-3 py-1.5 font-medium whitespace-nowrap">
                       {a.nome}
                     </td>
                     {colunas.map((col) => {
-                      const nivel = av[col.key] as Nivel | undefined;
+                      const nivel = av[col.key] as NivelOuNA | undefined;
                       const cls = HEAT_CELL[nivel ?? "vazio"];
+                      const just = justs[col.key];
+                      const label = nivel ? NIVEL_OU_NA_LABEL[nivel] : "não avaliado";
                       return (
                         <td
                           key={col.key}
                           className={`border-b border-r text-center ${cls}`}
                           style={{ minWidth: 32, maxWidth: 32, height: 28 }}
-                          title={`${a.nome} · ${col.habilidade}${nivel ? " · " + NIVEL_LABEL[nivel] : " · não avaliado"}`}
+                          title={`${a.nome} · ${col.habilidade} · ${label}${just ? " — " + just : ""}`}
                         />
                       );
                     })}
