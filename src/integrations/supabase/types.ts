@@ -393,6 +393,75 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_base_years: {
+        Row: {
+          created_at: string
+          id: string
+          knowledge_base_id: string
+          school_year_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          knowledge_base_id: string
+          school_year_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          knowledge_base_id?: string
+          school_year_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_base_years_knowledge_base_id_fkey"
+            columns: ["knowledge_base_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_bases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_base_years_school_year_id_fkey"
+            columns: ["school_year_id"]
+            isOneToOne: false
+            referencedRelation: "school_years"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_bases: {
+        Row: {
+          ativo: boolean
+          conteudo: string
+          created_at: string
+          created_by: string
+          descricao: string | null
+          id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          conteudo: string
+          created_at?: string
+          created_by: string
+          descricao?: string | null
+          id?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          conteudo?: string
+          created_at?: string
+          created_by?: string
+          descricao?: string | null
+          id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lesson_plan_comments: {
         Row: {
           comentario: string
