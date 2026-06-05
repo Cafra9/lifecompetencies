@@ -334,7 +334,7 @@ function AlunoCard({
             onClick={onEvidences}
           >
             <Paperclip className="h-4 w-4" />
-            Evidências ({evidenceCount})
+            Evidências{total > 0 ? ` (${fulfilled}/${total})` : ""}
           </Button>
         </div>
 
