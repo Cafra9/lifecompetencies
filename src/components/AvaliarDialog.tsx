@@ -690,7 +690,7 @@ export function RelatorioDialog({
       toast.error("Gere o relatório antes de baixar.");
       return;
     }
-    downloadPDF({ texto, alunoNome, professorNome, segmentoLabel });
+    downloadPDF({ texto, alunoNome, professorNome, segmentoLabel, fontes: fontesTexto });
   }
 
   // Gera automaticamente ao abrir
