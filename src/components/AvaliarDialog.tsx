@@ -385,11 +385,13 @@ function downloadPDF({
   alunoNome,
   professorNome,
   segmentoLabel,
+  fontes,
 }: {
   texto: string;
   alunoNome: string;
   professorNome: string;
   segmentoLabel: string;
+  fontes?: string;
 }) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
