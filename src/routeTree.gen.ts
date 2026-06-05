@@ -26,6 +26,7 @@ import { Route as FormacaoSlugRouteImport } from './routes/formacao/$slug'
 import { Route as AvaliacoesRubricaRouteImport } from './routes/avaliacoes/rubrica'
 import { Route as AlunosIdRouteImport } from './routes/alunos/$id'
 import { Route as AdminTiposEvidenciaRouteImport } from './routes/admin/tipos-evidencia'
+import { Route as AdminBasesConhecimentoRouteImport } from './routes/admin/bases-conhecimento'
 import { Route as RelatoriosAlunoIdRouteImport } from './routes/relatorios/aluno/$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -113,6 +114,11 @@ const AdminTiposEvidenciaRoute = AdminTiposEvidenciaRouteImport.update({
   path: '/admin/tipos-evidencia',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBasesConhecimentoRoute = AdminBasesConhecimentoRouteImport.update({
+  id: '/admin/bases-conhecimento',
+  path: '/admin/bases-conhecimento',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RelatoriosAlunoIdRoute = RelatoriosAlunoIdRouteImport.update({
   id: '/relatorios/aluno/$id',
   path: '/relatorios/aluno/$id',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/login': typeof LoginRoute
+  '/admin/bases-conhecimento': typeof AdminBasesConhecimentoRoute
   '/admin/tipos-evidencia': typeof AdminTiposEvidenciaRoute
   '/alunos/$id': typeof AlunosIdRoute
   '/avaliacoes/rubrica': typeof AvaliacoesRubricaRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/login': typeof LoginRoute
+  '/admin/bases-conhecimento': typeof AdminBasesConhecimentoRoute
   '/admin/tipos-evidencia': typeof AdminTiposEvidenciaRoute
   '/alunos/$id': typeof AlunosIdRoute
   '/avaliacoes/rubrica': typeof AvaliacoesRubricaRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/login': typeof LoginRoute
+  '/admin/bases-conhecimento': typeof AdminBasesConhecimentoRoute
   '/admin/tipos-evidencia': typeof AdminTiposEvidenciaRoute
   '/alunos/$id': typeof AlunosIdRoute
   '/avaliacoes/rubrica': typeof AvaliacoesRubricaRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/login'
+    | '/admin/bases-conhecimento'
     | '/admin/tipos-evidencia'
     | '/alunos/$id'
     | '/avaliacoes/rubrica'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/login'
+    | '/admin/bases-conhecimento'
     | '/admin/tipos-evidencia'
     | '/alunos/$id'
     | '/avaliacoes/rubrica'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/login'
+    | '/admin/bases-conhecimento'
     | '/admin/tipos-evidencia'
     | '/alunos/$id'
     | '/avaliacoes/rubrica'
@@ -247,6 +259,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   LoginRoute: typeof LoginRoute
+  AdminBasesConhecimentoRoute: typeof AdminBasesConhecimentoRoute
   AdminTiposEvidenciaRoute: typeof AdminTiposEvidenciaRoute
   AlunosIdRoute: typeof AlunosIdRoute
   AvaliacoesRubricaRoute: typeof AvaliacoesRubricaRoute
@@ -385,6 +398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTiposEvidenciaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/bases-conhecimento': {
+      id: '/admin/bases-conhecimento'
+      path: '/admin/bases-conhecimento'
+      fullPath: '/admin/bases-conhecimento'
+      preLoaderRoute: typeof AdminBasesConhecimentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/relatorios/aluno/$id': {
       id: '/relatorios/aluno/$id'
       path: '/relatorios/aluno/$id'
@@ -399,6 +419,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   LoginRoute: LoginRoute,
+  AdminBasesConhecimentoRoute: AdminBasesConhecimentoRoute,
   AdminTiposEvidenciaRoute: AdminTiposEvidenciaRoute,
   AlunosIdRoute: AlunosIdRoute,
   AvaliacoesRubricaRoute: AvaliacoesRubricaRoute,
