@@ -235,12 +235,14 @@ function AvaliacoesPage() {
 
 function AlunoCard({
   aluno,
+  requirements,
   onAvaliar,
   onRelatorio,
   onHeatmap,
   onEvidences,
 }: {
   aluno: { id: string; nome: string; ano: string };
+  requirements: RequirementItem[];
   onAvaliar: () => void;
   onRelatorio: () => void;
   onHeatmap: () => void;
@@ -248,7 +250,10 @@ function AlunoCard({
 }) {
   const { data, fechado, setFechadoStatus } = useStudentAssessment(aluno.id);
   const c = countByLevel(data);
-  const { data: evidenceCount = 0 } = useEvidenceCount(aluno.id);
+  const requiredIds = requirements.map((r) => r.id);
+  const { data: progress } = useEvidenceProgress(aluno.id, requiredIds);
+  const total = progress?.total ?? requiredIds.length;
+  const fulfilled = progress?.fulfilled ?? 0;
 
 
   function toggleFechado() {
