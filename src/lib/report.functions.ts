@@ -232,9 +232,22 @@ export const gerarRelatorioAluno = createServerFn({ method: "POST" })
       return { texto: "", error: "Chave de API indisponível no servidor.", analisadas: [], naoAnalisadas: [] };
     }
 
+    const tomInstrucoes: Record<"descritivo" | "objetivo" | "afetivo", string> = {
+      descritivo:
+        "TOM: mais descritivo e narrativo. Detalhe situações, cenas e nuances do cotidiano escolar; use adjetivos qualificadores e exemplos concretos; parágrafos mais longos e ricos em imagens.",
+      objetivo:
+        "TOM: mais objetivo e conciso. Frases diretas, vocabulário técnico-pedagógico moderado, sem floreios; priorize fatos e observações; parágrafos enxutos; evite adjetivos excessivos.",
+      afetivo:
+        "TOM: mais afetivo e acolhedor. Linguagem calorosa, próxima da família, valorizando vínculos, sentimentos, conquistas e singularidades da criança; tom esperançoso e celebrativo, mantendo profissionalismo.",
+    };
+    const tom = (data.tom ?? "descritivo") as "descritivo" | "objetivo" | "afetivo";
+    const instrucaoTom = tomInstrucoes[tom];
+
     if (data.mode === "rewrite") {
       const prompt = `Você é um(a) coordenador(a) pedagógico(a) do programa iSP Life Competencies.
-Reescreva APENAS o trecho abaixo do relatório pedagógico do(a) aluno(a) "${data.alunoNome}", mantendo o mesmo tom acolhedor e profissional, em português, em prosa fluida (sem bullets, sem markdown, sem títulos). Mantenha aproximadamente o mesmo tamanho.
+Reescreva APENAS o trecho abaixo do relatório pedagógico do(a) aluno(a) "${data.alunoNome}", em português, em prosa fluida (sem bullets, sem markdown, sem títulos). Mantenha aproximadamente o mesmo tamanho.
+
+${instrucaoTom}
 
 ${data.contexto ? `Contexto do relatório completo (apenas para referência, NÃO reescreva):\n"""\n${data.contexto}\n"""\n` : ""}
 Trecho a reescrever:
