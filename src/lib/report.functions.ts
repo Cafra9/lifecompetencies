@@ -4,7 +4,8 @@ import { z } from "zod";
 const AvaliacaoSchema = z.object({
   competencia: z.string().min(1).max(80),
   habilidade: z.string().min(1).max(120),
-  nivel: z.enum(["iniciando", "desenvolvendo", "dominando"]),
+  nivel: z.enum(["iniciando", "desenvolvendo", "dominando", "nao_aplica"]),
+  justificativa: z.string().max(500).optional(),
 });
 
 const FullInputSchema = z.object({
