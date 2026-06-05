@@ -592,9 +592,19 @@ export function RelatorioDialog({
           observacaoProfessor: observacao,
           avaliacoes,
           basesConhecimento,
-          evidencias,
+          evidencias: evidencias.map((e) => ({
+            titulo: e.titulo,
+            categoria: e.categoria,
+            descricao: e.descricao,
+            arquivo: e.arquivo,
+            storagePath: e.storagePath,
+          })),
         },
       });
+      setTemObservacao(!!observacao.trim());
+      setTemBases(basesConhecimento.length > 0);
+      setAnalisadas((res as any).analisadas ?? []);
+      setNaoAnalisadas((res as any).naoAnalisadas ?? []);
       if (res.error) toast.error(res.error);
       else setTexto(res.texto);
     } catch (e) {
