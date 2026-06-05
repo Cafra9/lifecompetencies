@@ -33,6 +33,25 @@ import { useAuth } from "@/hooks/useAuth";
 import ispLogo from "@/assets/isp-logo.png";
 import { corDaCompetencia } from "@/lib/competencia-cores";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+type TomRelatorio = "descritivo" | "objetivo" | "afetivo";
+const TOM_LABEL: Record<TomRelatorio, string> = {
+  descritivo: "Mais descritivo",
+  objetivo: "Mais objetivo",
+  afetivo: "Mais afetivo",
+};
+const TOM_HINT: Record<TomRelatorio, string> = {
+  descritivo: "Narrativo e detalhado, com cenas do cotidiano.",
+  objetivo: "Direto e conciso, foco em fatos e observações.",
+  afetivo: "Acolhedor e caloroso, valorizando vínculos.",
+};
 
 const NIVEIS: Nivel[] = ["iniciando", "desenvolvendo", "dominando"];
 
@@ -524,6 +543,7 @@ export function RelatorioDialog({
   const segmentoLabel = "Educação Infantil (4-7 anos)";
 
   const [texto, setTexto] = useState("");
+  const [tom, setTom] = useState<TomRelatorio>("descritivo");
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
@@ -620,6 +640,7 @@ export function RelatorioDialog({
             arquivo: e.arquivo,
             storagePath: e.storagePath,
           })),
+          tom,
         },
       });
       setTemObservacao(!!observacao.trim());
@@ -656,6 +677,7 @@ export function RelatorioDialog({
           alunoNome,
           trecho,
           contexto: texto,
+          tom,
         },
       });
       if (res.error) {
@@ -748,11 +770,29 @@ export function RelatorioDialog({
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-h-0 gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-xs text-muted-foreground">
-                {trechoLen > 0
-                  ? `${trechoLen} caractere(s) selecionados — "Regerar" reescreverá apenas a seleção.`
-                  : "Nenhuma seleção — \"Regerar\" reescreverá o relatório inteiro."}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Tom:</span>
+                <Select value={tom} onValueChange={(v) => setTom(v as TomRelatorio)}>
+                  <SelectTrigger className="h-7 w-[180px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(["descritivo", "objetivo", "afetivo"] as TomRelatorio[]).map((t) => (
+                      <SelectItem key={t} value={t} className="text-xs">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{TOM_LABEL[t]}</span>
+                          <span className="text-[10px] text-muted-foreground">{TOM_HINT[t]}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="hidden sm:inline text-[11px] text-muted-foreground">
+                  {trechoLen > 0
+                    ? `${trechoLen} caractere(s) selecionados`
+                    : "Sem seleção — regera o relatório inteiro"}
+                </span>
               </div>
               <Button
                 variant="ghost"
