@@ -11,12 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
 
-export const EVIDENCE_FILE_ACCEPT =
+export const EVIDENCE_FILE_ACCEPT_FALLBACK =
   ".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png,.webp,.mp4,.mov,.zip";
-
-const ALLOWED_EXT = new Set([
-  "pdf", "docx", "pptx", "xlsx", "jpg", "jpeg", "png", "webp", "mp4", "mov", "zip",
-]);
 
 interface Props {
   studentId: string;
