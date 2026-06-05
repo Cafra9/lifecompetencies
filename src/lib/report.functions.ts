@@ -23,6 +23,8 @@ const EvidenciaSchema = z.object({
   arquivo: z.string().max(300).optional().default(""),
 });
 
+const TomSchema = z.enum(["descritivo", "objetivo", "afetivo"]).optional().default("descritivo");
+
 const FullInputSchema = z.object({
   mode: z.literal("full"),
   alunoNome: z.string().min(1).max(120),
@@ -32,6 +34,7 @@ const FullInputSchema = z.object({
   avaliacoes: z.array(AvaliacaoSchema).min(1).max(50),
   basesConhecimento: z.array(KnowledgeBaseSchema).max(20).optional().default([]),
   evidencias: z.array(EvidenciaSchema).max(60).optional().default([]),
+  tom: TomSchema,
 });
 
 const RewriteInputSchema = z.object({
@@ -39,6 +42,7 @@ const RewriteInputSchema = z.object({
   alunoNome: z.string().min(1).max(120),
   trecho: z.string().min(1).max(4000),
   contexto: z.string().max(8000).optional().default(""),
+  tom: TomSchema,
 });
 
 const InputSchema = z.discriminatedUnion("mode", [FullInputSchema, RewriteInputSchema]);
