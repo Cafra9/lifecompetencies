@@ -1,48 +1,39 @@
 ## Objetivo
 
-Permitir que o professor marque cada habilidade da rubrica como **"Não se aplica" (N/A)**, opcionalmente com uma breve justificativa. O item N/A é registrado sem pontuação e aparece de forma transparente no relatório, garantindo que toda habilidade foi avaliada ou justificadamente excluída.
+Tornar o botão **Evidências** do card do aluno (em `/avaliacoes`) dependente das evidências que a **turma** exige, com contador dinâmico `X/Y` e um diálogo organizado pela lista de requisitos da turma.
+
+A base já existe no banco — `year_requirements` (school_year_id → requirement_id) é o que define o que cada turma exige, e já é usado em `routes/turmas/$id.tsx` e `routes/alunos/$id.tsx`. Vamos reaproveitar a mesma fonte na tela de avaliações.
 
 ## Mudanças
 
-### 1. Modelo de dados (`student_assessments`)
-- Adicionar valor lógico `"nao_aplica"` ao tipo `Nivel` (a coluna `nivel` é `text`, não enum — não exige migration de tipo).
-- Adicionar coluna `justificativa text` (nullable, máx. 500 chars) em `student_assessments` via migration, para guardar a justificativa breve quando `nivel = 'nao_aplica'`.
-- `countByLevel` passa a contar `naoAplica` separado e **não** soma ao `total` pontuável (só conta habilidades com nível pontuável: iniciando/desenvolvendo/dominando). Um novo contador `cobertas = pontuadas + naoAplica` é usado para indicar "todas as habilidades foram tratadas".
+### 1. `src/routes/avaliacoes/index.tsx`
+- Após carregar a turma selecionada, buscar `school_year_id` da turma e a lista de `year_requirements` correspondente (join com `evidence_requirements` para obter `nome`, `slug`, `allowed_extensions`, `orientacao`, `obrigatorio`).
+- Passar essa lista (`requirements`) para cada `AlunoCard` e para o `EvidencesDialog`.
+- `AlunoCard`: substituir `useEvidenceCount` por um hook que retorna `{ fulfilled, total }`:
+  - `total` = nº de requisitos definidos para a turma (ou 0 se a turma não tem requisitos).
+  - `fulfilled` = nº de `requirement_id` distintos presentes em `student_evidences` do aluno que estão dentro do conjunto exigido.
+- Botão passa a exibir `Evidências (X/Y)`. Quando `total === 0`, exibe `Evidências` (sem fração) e o diálogo mostra um aviso de "Nenhum requisito definido para esta turma — defina em Configurações".
 
-### 2. UI — `AvaliarDialog`
-- Adicionar 4ª opção no grid de níveis dentro do accordion de cada habilidade: **"Não se aplica"** (estilo neutro/cinza, diferente dos verdes).
-- Ao selecionar N/A, mostrar um `Textarea` compacto inline ("Justificativa breve — opcional", maxLength 500) que persiste junto.
-- Badge do item passa a mostrar "N/A" quando aplicável.
-- Contador no topo: `X/15 habilidades avaliadas · Y N/A` (ou cobertura `Z/15`).
-- `save()` / store atualizados para enviar `justificativa` no upsert e limpá-la quando o nível volta a ser pontuável.
+### 2. `src/components/EvidencesDialog.tsx`
+- Aceitar nova prop `requirements: Array<{ id, nome, orientacao, obrigatorio, allowed_extensions }>`.
+- Reorganizar o conteúdo: em vez de uma lista plana de uploads, mostrar **uma seção por requisito** na ordem definida:
+  - Cabeçalho com nome, badge "Obrigatório/Opcional", check verde quando já há ao menos uma evidência daquele `requirement_id`, e botão **Adicionar evidência** que abre `EvidenceUploadDialog` já com `defaultRequirementId` fixado (a categoria não é editável no upload neste fluxo).
+  - Lista das evidências enviadas para aquele requisito (mesmo card atual com visualizar/baixar/excluir).
+- Evidências "órfãs" (sem `requirement_id` ou com requisito que não pertence mais à turma) ficam em uma seção final "Outras evidências".
+- Resumo no topo: `X/Y requisitos atendidos`.
 
-### 3. UI — `AlunoCard` (lista de avaliações)
-- Nova linha "Não se aplica" no resumo (cinza).
-- Botões "Heatmap" / "Relatório" passam a ficar habilitados quando houver qualquer item tratado (pontuado **ou** N/A), não só pontuados.
-- "Fechar avaliação" exige que **todas as 15 habilidades estejam cobertas** (pontuadas ou marcadas como N/A), reforçando a regra de "relatório completo".
+### 3. `src/components/EvidenceUploadDialog.tsx`
+- Quando receber `defaultRequirementId`, esconder o seletor de categoria e travar nesse requisito (mantendo as extensões permitidas dinâmicas, como já está).
 
-### 4. Heatmap (`HeatmapDialog`, `ClassHeatmapDialog`)
-- Células N/A renderizadas com hachura/cinza claro e tooltip "Não se aplica — <justificativa>".
-
-### 5. Relatório IA (`src/lib/report.functions.ts`)
-- Schema Zod aceita `nivel: "iniciando" | "desenvolvendo" | "dominando" | "nao_aplica"` e `justificativa?: string`.
-- Prompt atualizado: instrui a IA a **listar explicitamente as habilidades marcadas como N/A** em um parágrafo dedicado ("Habilidades não aplicáveis neste momento"), citando a justificativa quando houver, sem atribuir nível/pontuação.
-- `AvaliarDialog.handleGerarCompleto` passa também os itens N/A (hoje filtra implicitamente pelo `Object.entries(data)`; precisa propagar `justificativa`).
-
-### 6. PDF
-- Sem mudança estrutural — o texto gerado pela IA já contemplará o bloco de N/A.
-
-## Arquivos afetados
-
-- `supabase/migrations/<novo>.sql` — adiciona coluna `justificativa` em `student_assessments`.
-- `src/lib/rubrica-infantil.ts` — estende `Nivel` e `NIVEL_LABEL`.
-- `src/lib/assessments-store.ts` — persistência da justificativa + `countByLevel` com `naoAplica` e `cobertas`.
-- `src/components/AvaliarDialog.tsx` — botão N/A + campo justificativa + cálculo.
-- `src/routes/avaliacoes/index.tsx` — `AlunoCard`: nova linha, regra de fechamento, habilitação de Heatmap/Relatório.
-- `src/components/HeatmapDialog.tsx`, `src/components/ClassHeatmapDialog.tsx` — render N/A.
-- `src/lib/report.functions.ts` — schema + prompt.
+### 4. Hook utilitário
+- Em `EvidencesDialog.tsx`, substituir `useEvidenceCount` por `useEvidenceProgress(studentId, requiredIds)` que retorna `{ fulfilled, total, fulfilledIds }`. Mantém uma única query (`student_evidences` por `student_id` selecionando `requirement_id`) e calcula a interseção no cliente.
 
 ## Fora de escopo
+- Não muda schema do banco, RLS, nem o fluxo da página `/alunos/$id` (que já segue padrão semelhante).
+- Não altera regras de avaliação/N-A, heatmap ou relatório IA.
+- Não cria/edita requisitos por turma — isso continua em Configurações.
 
-- Não muda a tabela legada `assessments` (USER-DEFINED enum) — ela não é usada pelo fluxo de rubrica do aluno.
-- Não altera evidências, turmas, ou auth.
+## Arquivos afetados
+- `src/routes/avaliacoes/index.tsx`
+- `src/components/EvidencesDialog.tsx`
+- `src/components/EvidenceUploadDialog.tsx`
