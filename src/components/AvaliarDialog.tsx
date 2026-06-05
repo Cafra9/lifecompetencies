@@ -58,8 +58,9 @@ export function AvaliarDialog({
   alunoId: string;
   alunoNome: string;
 }) {
-  const { data, observacao, fechado, save } = useStudentAssessment(alunoId);
+  const { data, justificativas, observacao, fechado, save } = useStudentAssessment(alunoId);
   const [local, setLocal] = useState<AssessmentMap>(data);
+  const [localJust, setLocalJust] = useState<JustificativaMap>(justificativas);
   const [localObs, setLocalObs] = useState<string>(observacao);
   const [openItems, setOpenItems] = useState<Record<string, string[]>>({});
   const hydratedRef = useRef(false);
@@ -67,6 +68,7 @@ export function AvaliarDialog({
   useEffect(() => {
     if (open) {
       setLocal(data);
+      setLocalJust(justificativas);
       setLocalObs(observacao);
       setOpenItems({});
       // pequeno delay para evitar que o efeito de auto-save dispare
@@ -83,31 +85,49 @@ export function AvaliarDialog({
   // ou sair do site no meio do preenchimento.
   useEffect(() => {
     if (!open || fechado || !hydratedRef.current) return;
-    save(local, localObs);
-  }, [local, localObs, open, fechado, save]);
+    save(local, localJust, localObs);
+  }, [local, localJust, localObs, open, fechado, save]);
 
   const total = RUBRICA_INFANTIL.reduce((acc, c) => acc + c.habilidades.length, 0);
-  const preenchidos = Object.keys(local).length;
+  const preenchidos = Object.values(local).filter((v) => v !== "nao_aplica").length;
+  const naAplica = Object.values(local).filter((v) => v === "nao_aplica").length;
 
-  function setNivel(comp: string, hab: string, nivel: Nivel, slug: string) {
+  function setNivel(comp: string, hab: string, nivel: NivelOuNA, slug: string) {
     if (fechado) return;
+    const k = key(comp, hab);
     setLocal((prev) => {
-      const k = key(comp, hab);
       if (prev[k] === nivel) {
         const { [k]: _, ...rest } = prev;
         return rest;
       }
       return { ...prev, [k]: nivel };
     });
-    setOpenItems((prev) => ({
-      ...prev,
-      [slug]: (prev[slug] ?? []).filter((v) => v !== key(comp, hab)),
-    }));
+    if (nivel !== "nao_aplica") {
+      // limpa justificativa ao sair de N/A
+      setLocalJust((prev) => {
+        if (!(k in prev)) return prev;
+        const { [k]: _, ...rest } = prev;
+        return rest;
+      });
+    }
+    // Mantém o item aberto se for N/A para escrever justificativa.
+    if (nivel !== "nao_aplica") {
+      setOpenItems((prev) => ({
+        ...prev,
+        [slug]: (prev[slug] ?? []).filter((v) => v !== k),
+      }));
+    }
+  }
+
+  function setJustificativa(comp: string, hab: string, value: string) {
+    if (fechado) return;
+    const k = key(comp, hab);
+    setLocalJust((prev) => ({ ...prev, [k]: value }));
   }
 
   function handleSave() {
-    save(local, localObs);
-    toast.success(`Avaliação salva (${Object.keys(local).length}/${total} habilidades)`);
+    save(local, localJust, localObs);
+    toast.success(`Avaliação salva (${preenchidos} avaliada(s) · ${naAplica} N/A)`);
     onOpenChange(false);
   }
 
