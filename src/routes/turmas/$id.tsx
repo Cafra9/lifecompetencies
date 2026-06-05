@@ -61,7 +61,7 @@ function TurmaDetalhe() {
     enabled: studentIds.length > 0,
     queryFn: async () =>
       (await sb.from("student_evidences")
-        .select("id, student_id, requirement_id, created_at, titulo")
+        .select("id, student_id, requirement_id, created_at, titulo, analysis_status")
         .in("student_id", studentIds)
         .order("created_at", { ascending: false })).data ?? [],
   });
@@ -193,7 +193,7 @@ function TurmaDetalhe() {
                       studentId={a.id}
                       trigger={
                         <Button variant="ghost" size="sm">
-                          <FileUp className="h-4 w-4 mr-1" /> Evidência
+                          <FileUp className="h-4 w-4 mr-1" /> Adicionar Evidência
                         </Button>
                       }
                     />

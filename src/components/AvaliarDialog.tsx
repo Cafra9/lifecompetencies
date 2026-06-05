@@ -575,9 +575,9 @@ export function RelatorioDialog({
       if (ids.length === 0) return [];
       const { data: bases } = await sb
         .from("knowledge_bases").select("titulo, conteudo, ativo").in("id", ids).eq("ativo", true);
-      return (bases ?? []).slice(0, 20).map((b: any) => ({
+      return (bases ?? []).map((b: any) => ({
         titulo: String(b.titulo),
-        conteudo: String(b.conteudo).slice(0, 8000),
+        conteudo: String(b.conteudo),
       }));
     } catch (e) {
       console.error("Falha ao buscar bases de conhecimento", e);
@@ -586,25 +586,35 @@ export function RelatorioDialog({
   }
 
   async function fetchEvidencias(): Promise<
-    { titulo: string; categoria: string; descricao: string; arquivo: string; storagePath: string }[]
+    {
+      titulo: string;
+      categoria: string;
+      descricao: string;
+      arquivo: string;
+      analysisStatus: "pending" | "analyzing" | "analyzed" | "error" | "skipped";
+      analysisSummary: string;
+      analysisError: string;
+    }[]
   > {
     try {
       const sb = supabase as any;
       const { data: evs } = await sb
         .from("student_evidences")
-        .select("titulo, descricao, arquivo_url, requirement:evidence_requirements(nome)")
+        .select("titulo, descricao, arquivo_url, arquivo_nome, analysis_status, analysis_summary, analysis_error, requirement:evidence_requirements(nome)")
         .eq("student_id", alunoId)
         .order("created_at", { ascending: false })
         .limit(60);
       return ((evs ?? []) as any[]).map((e) => {
         const url: string = e.arquivo_url ?? "";
-        const arquivo = url ? (url.split("/").pop() ?? "").split("?")[0] : "";
+        const arquivo = e.arquivo_nome || (url ? (url.split("/").pop() ?? "").split("?")[0] : "");
         return {
           titulo: String(e.titulo ?? "Evidência"),
           categoria: String(e.requirement?.nome ?? "Outra"),
           descricao: String(e.descricao ?? "").slice(0, 2000),
           arquivo,
-          storagePath: url,
+          analysisStatus: (e.analysis_status ?? "pending") as "pending" | "analyzing" | "analyzed" | "error" | "skipped",
+          analysisSummary: String(e.analysis_summary ?? "").slice(0, 6000),
+          analysisError: String(e.analysis_error ?? "").slice(0, 1200),
         };
       });
     } catch (e) {
@@ -624,6 +634,12 @@ export function RelatorioDialog({
         fetchBasesConhecimento(),
         fetchEvidencias(),
       ]);
+      const pendentes = evidencias.filter(
+        (e) => !(e.analysisStatus === "analyzed" && e.analysisSummary.trim()),
+      );
+      if (pendentes.length > 0) {
+        toast.warning(`${pendentes.length} evidência(s) ainda não analisada(s) ficarão fora da geração.`);
+      }
       const res = await gerar({
         data: {
           mode: "full",
@@ -638,7 +654,9 @@ export function RelatorioDialog({
             categoria: e.categoria,
             descricao: e.descricao,
             arquivo: e.arquivo,
-            storagePath: e.storagePath,
+            analysisStatus: e.analysisStatus,
+            analysisSummary: e.analysisSummary,
+            analysisError: e.analysisError,
           })),
           tom,
         },

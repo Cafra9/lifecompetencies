@@ -830,7 +830,16 @@ export type Database = {
       }
       student_evidences: {
         Row: {
+          analysis_error: string | null
+          analysis_payload: Json | null
+          analysis_status: string
+          analysis_summary: string | null
+          analyzed_at: string | null
+          arquivo_mime: string | null
+          arquivo_nome: string | null
+          arquivo_tamanho: number | null
           arquivo_url: string | null
+          class_id: string | null
           competency_id: string | null
           created_at: string
           created_by: string
@@ -840,13 +849,23 @@ export type Database = {
           nota: number | null
           periodo: string | null
           requirement_id: string | null
+          school_year_id: string | null
           skill_id: string | null
           student_id: string
           titulo: string
           updated_at: string
         }
         Insert: {
+          analysis_error?: string | null
+          analysis_payload?: Json | null
+          analysis_status?: string
+          analysis_summary?: string | null
+          analyzed_at?: string | null
+          arquivo_mime?: string | null
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
           arquivo_url?: string | null
+          class_id?: string | null
           competency_id?: string | null
           created_at?: string
           created_by: string
@@ -856,13 +875,23 @@ export type Database = {
           nota?: number | null
           periodo?: string | null
           requirement_id?: string | null
+          school_year_id?: string | null
           skill_id?: string | null
           student_id: string
           titulo: string
           updated_at?: string
         }
         Update: {
+          analysis_error?: string | null
+          analysis_payload?: Json | null
+          analysis_status?: string
+          analysis_summary?: string | null
+          analyzed_at?: string | null
+          arquivo_mime?: string | null
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
           arquivo_url?: string | null
+          class_id?: string | null
           competency_id?: string | null
           created_at?: string
           created_by?: string
@@ -872,12 +901,20 @@ export type Database = {
           nota?: number | null
           periodo?: string | null
           requirement_id?: string | null
+          school_year_id?: string | null
           skill_id?: string | null
           student_id?: string
           titulo?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "student_evidences_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "student_evidences_competency_id_fkey"
             columns: ["competency_id"]
@@ -890,6 +927,13 @@ export type Database = {
             columns: ["requirement_id"]
             isOneToOne: false
             referencedRelation: "evidence_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_evidences_school_year_id_fkey"
+            columns: ["school_year_id"]
+            isOneToOne: false
+            referencedRelation: "school_years"
             referencedColumns: ["id"]
           },
           {

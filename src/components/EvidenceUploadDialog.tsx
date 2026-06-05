@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -10,9 +11,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
+import { analisarEvidenciaAluno } from "@/lib/evidence-analysis.functions";
 
 export const EVIDENCE_FILE_ACCEPT_FALLBACK =
   ".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png,.webp,.mp4,.mov,.zip";
+
+const DEFAULT_EXTENSIONS = ["pdf", "docx", "pptx", "xlsx", "jpg", "jpeg", "png", "webp", "mp4", "mov", "zip"];
+
+const LEGACY_EVIDENCE_TYPES = new Set([
+  "rubrica",
+  "portfolio",
+  "notas",
+  "observacao_comportamento",
+  "relatorio_descritivo",
+  "producoes_alunos",
+  "evidencias_fotograficas",
+  "video",
+  "avaliacoes_academicas",
+  "projetos",
+  "outro",
+]);
+
+function legacyEvidenceType(slug: string) {
+  return LEGACY_EVIDENCE_TYPES.has(slug) ? slug : "outro";
+}
 
 interface Props {
   studentId: string;
@@ -21,9 +43,10 @@ interface Props {
 }
 
 export function EvidenceUploadDialog({ studentId, trigger, defaultRequirementId }: Props) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const qc = useQueryClient();
   const sb = supabase as any;
+  const analisar = useServerFn(analisarEvidenciaAluno);
   const [open, setOpen] = useState(false);
   const [requirementId, setRequirementId] = useState(defaultRequirementId ?? "");
   const [titulo, setTitulo] = useState("");
@@ -40,18 +63,21 @@ export function EvidenceUploadDialog({ studentId, trigger, defaultRequirementId 
 
   function reset() {
     setRequirementId(defaultRequirementId ?? "");
-    setTitulo(""); setDescricao(""); setPeriodo(""); setFile(null);
+    setTitulo("");
+    setDescricao("");
+    setPeriodo("");
+    setFile(null);
   }
 
   const selectedReq = (requirements as any[] | undefined)?.find((r) => r.id === requirementId);
   const allowedExts: string[] = selectedReq?.allowed_extensions?.length
-    ? selectedReq.allowed_extensions
-    : ["pdf","docx","pptx","xlsx","jpg","jpeg","png","webp","mp4","mov","zip"];
+    ? selectedReq.allowed_extensions.map((e: string) => e.toLowerCase())
+    : DEFAULT_EXTENSIONS;
   const acceptAttr = allowedExts.map((e) => `.${e}`).join(",");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || !requirementId || !titulo.trim()) return;
+    if (!user || !session || !requirementId || !titulo.trim()) return;
     const req = selectedReq;
     if (!req) return toast.error("Categoria inválida");
 
@@ -63,43 +89,81 @@ export function EvidenceUploadDialog({ studentId, trigger, defaultRequirementId 
     }
 
     setBusy(true);
-    let arquivo_url: string | null = null;
-    if (file) {
-      const dot = file.name.lastIndexOf(".");
-      const rawBase = dot > 0 ? file.name.slice(0, dot) : file.name;
-      const rawExt = dot > 0 ? file.name.slice(dot + 1) : "";
-      const sanitize = (s: string) =>
-        s
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-zA-Z0-9._-]+/g, "_")
-          .replace(/_+/g, "_")
-          .replace(/^[._-]+|[._-]+$/g, "");
-      const safeBase = (sanitize(rawBase) || "arquivo").slice(0, 80);
-      const safeExt = sanitize(rawExt).toLowerCase().slice(0, 10);
-      const safeName = safeExt ? `${safeBase}.${safeExt}` : safeBase;
-      const path = `${user.id}/${studentId}/${Date.now()}_${safeName}`;
-      const { error: upErr } = await supabase.storage.from("student-evidences").upload(path, file);
-      if (upErr) { toast.error(upErr.message); setBusy(false); return; }
-      arquivo_url = path;
+    try {
+      const { data: studentMeta } = await sb
+        .from("students")
+        .select("class_id, class:classes(school_year_id)")
+        .eq("id", studentId)
+        .maybeSingle();
+      const classId = studentMeta?.class_id ?? null;
+      const classRel = Array.isArray(studentMeta?.class) ? studentMeta.class[0] : studentMeta?.class;
+      const schoolYearId = classRel?.school_year_id ?? null;
+      let arquivo_url: string | null = null;
+      if (file) {
+        const dot = file.name.lastIndexOf(".");
+        const rawBase = dot > 0 ? file.name.slice(0, dot) : file.name;
+        const rawExt = dot > 0 ? file.name.slice(dot + 1) : "";
+        const sanitize = (s: string) =>
+          s
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-zA-Z0-9._-]+/g, "_")
+            .replace(/_+/g, "_")
+            .replace(/^[._-]+|[._-]+$/g, "");
+        const safeBase = (sanitize(rawBase) || "arquivo").slice(0, 80);
+        const safeExt = sanitize(rawExt).toLowerCase().slice(0, 10);
+        const safeName = safeExt ? `${safeBase}.${safeExt}` : safeBase;
+        const path = `${user.id}/${studentId}/${Date.now()}_${safeName}`;
+        const { error: upErr } = await supabase.storage.from("student-evidences").upload(path, file);
+        if (upErr) throw upErr;
+        arquivo_url = path;
+      }
+
+      const { data: inserted, error } = await sb
+        .from("student_evidences")
+        .insert({
+          student_id: studentId,
+          class_id: classId,
+          school_year_id: schoolYearId,
+          created_by: user.id,
+          requirement_id: req.id,
+          evidence_type: legacyEvidenceType(String(req.slug)),
+          titulo: titulo.trim(),
+          descricao: descricao || null,
+          periodo: periodo || null,
+          arquivo_url,
+          arquivo_nome: file?.name ?? null,
+          arquivo_mime: file?.type || null,
+          arquivo_tamanho: file?.size ?? null,
+          analysis_status: "pending",
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+
+      toast.success("Evidência enviada. Analisando para a IA...");
+      qc.invalidateQueries({ queryKey: ["student-evidences", studentId] });
+      qc.invalidateQueries({ queryKey: ["class-evidences"] });
+
+      const res = await analisar({ data: { evidenceId: inserted.id, accessToken: session.access_token } });
+      if (res.status === "analyzed") {
+        toast.success("Evidência analisada e disponível para relatórios.");
+      } else if (res.status === "skipped") {
+        toast.warning(res.error || "Evidência salva, mas ignorada pela análise automática por limite técnico.");
+      } else if (res.error) {
+        toast.warning(`Evidência salva, mas a análise falhou: ${res.error}`);
+      }
+
+      reset();
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["student-evidences", studentId] });
+      qc.invalidateQueries({ queryKey: ["class-evidences"] });
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao enviar evidência");
+    } finally {
+      setBusy(false);
     }
-    const { error } = await sb.from("student_evidences").insert({
-      student_id: studentId,
-      created_by: user.id,
-      requirement_id: req.id,
-      evidence_type: req.slug,
-      titulo: titulo.trim(),
-      descricao: descricao || null,
-      periodo: periodo || null,
-      arquivo_url,
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Evidência enviada");
-    reset();
-    setOpen(false);
-    qc.invalidateQueries({ queryKey: ["student-evidences", studentId] });
-    qc.invalidateQueries({ queryKey: ["class-evidences"] });
   }
 
   return (
@@ -147,7 +211,7 @@ export function EvidenceUploadDialog({ studentId, trigger, defaultRequirementId 
           </div>
           <DialogFooter>
             <Button type="submit" disabled={busy || !requirementId || !titulo.trim()}>
-              {busy ? "Enviando..." : <><Upload className="h-4 w-4 mr-2" /> Enviar evidência</>}
+              {busy ? "Enviando e analisando..." : <><Upload className="h-4 w-4 mr-2" /> Enviar evidência</>}
             </Button>
           </DialogFooter>
         </form>

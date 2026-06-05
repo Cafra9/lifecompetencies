@@ -1,21 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { competencyColor, LEVEL_LABEL, LEVEL_VALUE } from "@/lib/competencies";
-import { ArrowLeft, Upload, Download, Eye, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Upload, Download, Eye, Trash2, Plus, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 import { exportStudentReport } from "@/lib/pdf";
 import { EvidenceUploadDialog } from "@/components/EvidenceUploadDialog";
+import { analisarEvidenciaAluno } from "@/lib/evidence-analysis.functions";
 
 export const Route = createFileRoute("/alunos/$id")({ component: () => <AppLayout><AlunoDetalhe /></AppLayout> });
 
@@ -55,7 +58,12 @@ function AlunoDetalhe() {
   });
   const { data: studentEvidences } = useQuery({
     queryKey: ["student-evidences", id],
-    queryFn: async () => (await sb.from("student_evidences").select("*").eq("student_id", id).order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () =>
+      (await sb
+        .from("student_evidences")
+        .select("*, requirement:evidence_requirements(nome, slug)")
+        .eq("student_id", id)
+        .order("created_at", { ascending: false })).data ?? [],
   });
 
   const radar = useMemo(() => {
@@ -218,6 +226,33 @@ function AlunoDetalhe() {
   );
 }
 
+const ANALYSIS_STATUS_META: Record<string, { label: string; className: string }> = {
+  pending: {
+    label: "Pendente",
+    className: "border-slate-300 text-slate-700 bg-slate-50 dark:text-slate-300 dark:bg-slate-900/40",
+  },
+  analyzing: {
+    label: "Analisando",
+    className: "border-blue-300 text-blue-700 bg-blue-50 dark:text-blue-300 dark:bg-blue-950/40",
+  },
+  analyzed: {
+    label: "Analisada",
+    className: "border-emerald-300 text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/40",
+  },
+  error: {
+    label: "Erro",
+    className: "border-red-300 text-red-700 bg-red-50 dark:text-red-300 dark:bg-red-950/40",
+  },
+  skipped: {
+    label: "Ignorada",
+    className: "border-amber-300 text-amber-700 bg-amber-50 dark:text-amber-300 dark:bg-amber-950/40",
+  },
+};
+
+function analysisMeta(status: string | null | undefined) {
+  return ANALYSIS_STATUS_META[status || "pending"] ?? ANALYSIS_STATUS_META.pending;
+}
+
 function StudentEvidencesCard({
   studentId,
   yearReqs,
@@ -229,7 +264,9 @@ function StudentEvidencesCard({
 }) {
   const qc = useQueryClient();
   const sb = supabase as any;
-  const { user } = useAuth();
+  const { user, session, roles } = useAuth();
+  const analisar = useServerFn(analisarEvidenciaAluno);
+  const [reanalyzingId, setReanalyzingId] = useState<string | null>(null);
 
   const creatorIds = useMemo(() => [...new Set(evidences.map((e) => e.created_by).filter(Boolean))], [evidences]);
   const { data: profs } = useQuery({
@@ -265,6 +302,23 @@ function StudentEvidencesCard({
     toast.success("Evidência removida");
     qc.invalidateQueries({ queryKey: ["student-evidences", studentId] });
     qc.invalidateQueries({ queryKey: ["class-evidences"] });
+  }
+
+  async function reanalyzeEvidence(ev: any) {
+    if (!user || !session) return;
+    setReanalyzingId(ev.id);
+    try {
+      const res = await analisar({ data: { evidenceId: ev.id, accessToken: session.access_token } });
+      if (res.status === "analyzed") toast.success("Evidência reanalisada.");
+      else if (res.error) toast.warning(res.error);
+      else toast.info("Reanálise concluída.");
+      qc.invalidateQueries({ queryKey: ["student-evidences", studentId] });
+      qc.invalidateQueries({ queryKey: ["class-evidences"] });
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao reanalisar evidência");
+    } finally {
+      setReanalyzingId(null);
+    }
   }
 
   return (
@@ -311,19 +365,58 @@ function StudentEvidencesCard({
           </p>
         ) : (
           <div className="space-y-2">
-            {evidences.map((e) => (
+            {evidences.map((e) => {
+              const meta = analysisMeta(e.analysis_status);
+              const canReanalyze =
+                e.created_by === user?.id ||
+                roles.some((r) => r === "admin" || r === "diretora" || r === "coordenador");
+              const canDelete =
+                e.created_by === user?.id ||
+                roles.some((r) => r === "admin" || r === "diretora");
+              const category = e.requirement?.nome ?? String(e.evidence_type).replace(/_/g, " ");
+              return (
               <div key={e.id} className="border rounded-lg p-3 text-sm flex flex-wrap items-start gap-3 justify-between">
                 <div className="min-w-0 flex-1">
-                  <div className="font-medium">{e.titulo}</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="font-medium">{e.titulo}</div>
+                    <Badge variant="outline" className={`text-[10px] ${meta.className}`}>
+                      IA: {meta.label}
+                    </Badge>
+                  </div>
                   <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-x-2">
-                    <span className="capitalize">{String(e.evidence_type).replace(/_/g, " ")}</span>
+                    <span className="capitalize">{category}</span>
                     <span>· {new Date(e.created_at).toLocaleDateString("pt-BR")}</span>
                     {profById[e.created_by] && <span>· {profById[e.created_by]}</span>}
                     {e.periodo && <span>· {e.periodo}</span>}
                   </div>
                   {e.descricao && <div className="text-xs text-muted-foreground mt-1">{e.descricao}</div>}
+                  {e.analysis_summary && (
+                    <div className="text-xs mt-2 rounded-md bg-muted/50 p-2 text-muted-foreground line-clamp-3">
+                      {e.analysis_summary}
+                    </div>
+                  )}
+                  {e.analysis_error && (
+                    <div className="text-xs mt-2 text-amber-700 dark:text-amber-300">
+                      {e.analysis_error}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  {canReanalyze && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => reanalyzeEvidence(e)}
+                      title="Reanalisar"
+                      disabled={reanalyzingId === e.id}
+                    >
+                      {reanalyzingId === e.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
                   {e.arquivo_url && (
                     <>
                       <Button size="icon" variant="ghost" onClick={() => openFile(e.arquivo_url)} title="Visualizar">
@@ -334,14 +427,15 @@ function StudentEvidencesCard({
                       </Button>
                     </>
                   )}
-                  {(e.created_by === user?.id) && (
+                  {canDelete && (
                     <Button size="icon" variant="ghost" onClick={() => deleteEvidence(e)} title="Excluir">
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
