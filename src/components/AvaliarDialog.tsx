@@ -470,6 +470,28 @@ function downloadPDF({
     y += lineHeight * 0.5;
   }
 
+  if (fontes && fontes.trim()) {
+    y += lineHeight;
+    if (y > pageH - marginBottom - lineHeight * 3) {
+      doc.addPage();
+      y = marginTop;
+    }
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(marginX, y - lineHeight * 0.6, pageW - marginX, y - lineHeight * 0.6);
+    doc.setFontSize(9);
+    doc.setTextColor(110, 110, 110);
+    const fLines = doc.splitTextToSize(fontes, maxWidth) as string[];
+    for (const line of fLines) {
+      if (y > pageH - marginBottom) {
+        doc.addPage();
+        y = marginTop;
+      }
+      doc.text(line, marginX, y);
+      y += lineHeight * 0.85;
+    }
+  }
+
   // Rodapé numeração
   const pageCount = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
