@@ -2,13 +2,15 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import type { Nivel } from "@/lib/rubrica-infantil";
+import type { NivelOuNA } from "@/lib/rubrica-infantil";
 
-export type AssessmentMap = Record<string, Nivel>; // `${competencia}::${habilidade}` -> nivel
+export type AssessmentMap = Record<string, NivelOuNA>; // `${competencia}::${habilidade}` -> nivel
+export type JustificativaMap = Record<string, string>; // mesma chave -> justificativa (apenas para nao_aplica)
 
 export interface StudentAssessment {
   alunoId: string;
   avaliacoes: AssessmentMap;
+  justificativas: JustificativaMap;
   observacao: string;
   fechado: boolean;
   fechadoEm?: string | null;
@@ -18,21 +20,29 @@ export interface StudentAssessment {
 const EMPTY: StudentAssessment = {
   alunoId: "",
   avaliacoes: {},
+  justificativas: {},
   observacao: "",
   fechado: false,
 };
 
-function rowsToMap(rows: { competencia: string; habilidade: string; nivel: Nivel }[]): AssessmentMap {
-  const out: AssessmentMap = {};
-  for (const r of rows) out[`${r.competencia}::${r.habilidade}`] = r.nivel;
-  return out;
+function rowsToMaps(
+  rows: { competencia: string; habilidade: string; nivel: string; justificativa?: string | null }[],
+): { av: AssessmentMap; just: JustificativaMap } {
+  const av: AssessmentMap = {};
+  const just: JustificativaMap = {};
+  for (const r of rows) {
+    const k = `${r.competencia}::${r.habilidade}`;
+    av[k] = r.nivel as NivelOuNA;
+    if (r.justificativa) just[k] = r.justificativa;
+  }
+  return { av, just };
 }
 
 async function fetchStudent(userId: string, alunoId: string): Promise<StudentAssessment> {
   const [{ data: aRows }, { data: meta }] = await Promise.all([
     supabase
       .from("student_assessments")
-      .select("competencia, habilidade, nivel")
+      .select("competencia, habilidade, nivel, justificativa")
       .eq("user_id", userId)
       .eq("aluno_id", alunoId),
     supabase
@@ -43,9 +53,12 @@ async function fetchStudent(userId: string, alunoId: string): Promise<StudentAss
       .maybeSingle(),
   ]);
 
+  const { av, just } = rowsToMaps((aRows ?? []) as any);
+
   return {
     alunoId,
-    avaliacoes: rowsToMap((aRows ?? []) as any),
+    avaliacoes: av,
+    justificativas: just,
     observacao: meta?.observacao ?? "",
     fechado: meta?.fechado ?? false,
     fechadoEm: meta?.fechado_em ?? null,
@@ -57,7 +70,7 @@ async function fetchAll(userId: string): Promise<Record<string, StudentAssessmen
   const [{ data: aRows }, { data: metas }] = await Promise.all([
     supabase
       .from("student_assessments")
-      .select("aluno_id, competencia, habilidade, nivel")
+      .select("aluno_id, competencia, habilidade, nivel, justificativa")
       .eq("user_id", userId),
     supabase
       .from("student_assessment_meta")
@@ -68,12 +81,26 @@ async function fetchAll(userId: string): Promise<Record<string, StudentAssessmen
   const out: Record<string, StudentAssessment> = {};
   for (const r of (aRows ?? []) as any[]) {
     if (!out[r.aluno_id])
-      out[r.aluno_id] = { alunoId: r.aluno_id, avaliacoes: {}, observacao: "", fechado: false };
-    out[r.aluno_id].avaliacoes[`${r.competencia}::${r.habilidade}`] = r.nivel;
+      out[r.aluno_id] = {
+        alunoId: r.aluno_id,
+        avaliacoes: {},
+        justificativas: {},
+        observacao: "",
+        fechado: false,
+      };
+    const k = `${r.competencia}::${r.habilidade}`;
+    out[r.aluno_id].avaliacoes[k] = r.nivel;
+    if (r.justificativa) out[r.aluno_id].justificativas[k] = r.justificativa;
   }
   for (const m of (metas ?? []) as any[]) {
     if (!out[m.aluno_id])
-      out[m.aluno_id] = { alunoId: m.aluno_id, avaliacoes: {}, observacao: "", fechado: false };
+      out[m.aluno_id] = {
+        alunoId: m.aluno_id,
+        avaliacoes: {},
+        justificativas: {},
+        observacao: "",
+        fechado: false,
+      };
     out[m.aluno_id].observacao = m.observacao ?? "";
     out[m.aluno_id].fechado = m.fechado ?? false;
     out[m.aluno_id].fechadoEm = m.fechado_em ?? null;
@@ -86,6 +113,7 @@ async function persist(
   userId: string,
   alunoId: string,
   avaliacoes: AssessmentMap,
+  justificativas: JustificativaMap,
   observacao: string,
 ) {
   // 1) meta
@@ -101,7 +129,9 @@ async function persist(
   if (entries.length) {
     const rows = entries.map(([k, nivel]) => {
       const [competencia, habilidade] = k.split("::");
-      return { user_id: userId, aluno_id: alunoId, competencia, habilidade, nivel };
+      const justificativa =
+        nivel === "nao_aplica" ? (justificativas[k] ?? "").trim() || null : null;
+      return { user_id: userId, aluno_id: alunoId, competencia, habilidade, nivel, justificativa };
     });
     await supabase
       .from("student_assessments")
@@ -145,7 +175,11 @@ export function useStudentAssessment(alunoId: string) {
   const current = q ?? EMPTY;
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pending = useRef<{ avaliacoes: AssessmentMap; observacao: string } | null>(null);
+  const pending = useRef<{
+    avaliacoes: AssessmentMap;
+    justificativas: JustificativaMap;
+    observacao: string;
+  } | null>(null);
 
   // flush em curso ao desmontar
   useEffect(() => {
@@ -153,29 +187,30 @@ export function useStudentAssessment(alunoId: string) {
       if (timer.current) clearTimeout(timer.current);
       const p = pending.current;
       if (userId && p) {
-        persist(userId, alunoId, p.avaliacoes, p.observacao).catch(() => {});
+        persist(userId, alunoId, p.avaliacoes, p.justificativas, p.observacao).catch(() => {});
       }
     };
   }, [userId, alunoId]);
 
   const save = useCallback(
-    (avaliacoes: AssessmentMap, observacao = "") => {
+    (avaliacoes: AssessmentMap, justificativas: JustificativaMap = {}, observacao = "") => {
       if (!userId) return;
       // optimistic
       qc.setQueryData(key, (old: StudentAssessment | undefined) => ({
         ...(old ?? EMPTY),
         alunoId,
         avaliacoes,
+        justificativas,
         observacao,
       }));
-      pending.current = { avaliacoes, observacao };
+      pending.current = { avaliacoes, justificativas, observacao };
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(async () => {
         const p = pending.current;
         pending.current = null;
         if (!p) return;
         try {
-          await persist(userId, alunoId, p.avaliacoes, p.observacao);
+          await persist(userId, alunoId, p.avaliacoes, p.justificativas, p.observacao);
           qc.invalidateQueries({ queryKey: ["all-student-assessments", userId] });
         } catch (e) {
           console.error("Falha ao salvar avaliação", e);
@@ -205,6 +240,7 @@ export function useStudentAssessment(alunoId: string) {
 
   return {
     data: current.avaliacoes,
+    justificativas: current.justificativas,
     observacao: current.observacao,
     fechado: current.fechado,
     save,
@@ -225,10 +261,15 @@ export function useAllAssessments() {
 }
 
 export function countByLevel(av: AssessmentMap) {
-  const c = { iniciando: 0, desenvolvendo: 0, dominando: 0, total: 0 };
+  const c = { iniciando: 0, desenvolvendo: 0, dominando: 0, naoAplica: 0, total: 0, cobertas: 0 };
   for (const v of Object.values(av)) {
-    c[v]++;
-    c.total++;
+    if (v === "nao_aplica") {
+      c.naoAplica++;
+    } else if (v === "iniciando" || v === "desenvolvendo" || v === "dominando") {
+      c[v]++;
+      c.total++;
+    }
+    c.cobertas++;
   }
   return c;
 }
