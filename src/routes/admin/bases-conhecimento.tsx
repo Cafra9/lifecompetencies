@@ -346,8 +346,12 @@ function EditDialog({
             <Label className="cursor-pointer">Ativo</Label>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button type="button" variant="secondary" disabled={busy}
+              onClick={() => save({ keepOpen: true })}>
+              {busy ? "Salvando..." : "Salvar e adicionar outra"}
+            </Button>
             <Button type="submit" disabled={busy}>{busy ? "Salvando..." : "Salvar"}</Button>
           </DialogFooter>
         </form>
