@@ -351,7 +351,7 @@ function YearRequirementsTab() {
     setLoading(true);
     const [sy, er, yr, cs] = await Promise.all([
       sb.from("school_years").select("*").eq("ativo", true).order("ordem"),
-      sb.from("evidence_requirements").select("*").eq("ativo", true).order("nome"),
+      sb.from("evidence_requirements").select("*").eq("ativo", true).neq("slug", "rubrica").order("nome"),
       sb.from("year_requirements").select("*"),
       sb.from("coordinator_segments").select("*"),
     ]);
