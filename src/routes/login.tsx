@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
+import { HAS_TEST_CREDENTIALS, TEST_AUTO_LOGIN } from "@/lib/test-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,20 @@ function LoginPage() {
   useEffect(() => {
     if (!loading && user) navigate({ to: redirectTo, replace: true });
   }, [user, loading, redirectTo, navigate]);
+
+  if (TEST_AUTO_LOGIN) {
+    const message = loading
+      ? "Entrando no ambiente de testes..."
+      : HAS_TEST_CREDENTIALS
+        ? "Falha no login automático de testes. Confira VITE_TEST_USER_EMAIL e VITE_TEST_USER_PASSWORD."
+        : "Configure VITE_TEST_USER_EMAIL e VITE_TEST_USER_PASSWORD para usar o login automático de testes.";
+
+    return (
+      <div className="min-h-screen grid place-items-center bg-[oklch(0.98_0.005_250)] px-4 text-sm text-muted-foreground">
+        {message}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen grid place-items-center bg-[oklch(0.98_0.005_250)] px-4">

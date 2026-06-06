@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { HAS_TEST_CREDENTIALS, TEST_AUTO_LOGIN, TEST_USER_EMAIL, TEST_USER_PASSWORD } from "@/lib/test-auth";
 
 type Role = "professor" | "coordenador" | "diretora" | "admin";
 
@@ -21,24 +22,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    let active = true;
+
+    async function applySession(s: Session | null) {
+      if (!active) return;
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        setTimeout(() => loadRoles(s.user.id), 0);
+        await loadRoles(s.user.id);
       } else {
         setRoles([]);
       }
+    }
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+      void applySession(s);
     });
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      if (data.session?.user) loadRoles(data.session.user.id);
-      setLoading(false);
-    });
+    async function initAuth() {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        await applySession(data.session);
+        if (active) setLoading(false);
+        return;
+      }
 
-    return () => sub.subscription.unsubscribe();
+      if (TEST_AUTO_LOGIN) {
+        if (!HAS_TEST_CREDENTIALS) {
+          console.error("VITE_TEST_AUTO_LOGIN está ativo, mas VITE_TEST_USER_EMAIL/VITE_TEST_USER_PASSWORD não foram configurados.");
+          await applySession(null);
+          if (active) setLoading(false);
+          return;
+        }
+
+        const { data: loginData, error } = await supabase.auth.signInWithPassword({
+          email: TEST_USER_EMAIL,
+          password: TEST_USER_PASSWORD,
+        });
+
+        if (error) {
+          console.error("Falha no login automático de teste:", error.message);
+          await applySession(null);
+          if (active) setLoading(false);
+          return;
+        }
+
+        await applySession(loginData.session);
+        if (active) setLoading(false);
+        return;
+      }
+
+      await applySession(null);
+      if (active) setLoading(false);
+    }
+
+    void initAuth();
+
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   async function loadRoles(uid: string) {
@@ -47,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signOut = async () => {
+    if (TEST_AUTO_LOGIN) return;
     await supabase.auth.signOut();
     setRoles([]);
   };

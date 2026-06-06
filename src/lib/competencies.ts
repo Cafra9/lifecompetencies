@@ -26,6 +26,6 @@ export const LEVEL_VALUE: Record<string, number> = {
 export const SEGMENT_LABEL: Record<string, string> = {
   infantil: "Early Years (Kindergarten)",
   fundamental_1: "Elementary School",
-  fundamental_2: "Elementary School",
-  medio: "Ensino Médio",
+  fundamental_2: "Middle School",
+  medio: "High School",
 };

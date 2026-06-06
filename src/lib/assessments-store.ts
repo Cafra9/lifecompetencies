@@ -246,7 +246,7 @@ export function useStudentAssessment(alunoId: string) {
 
   const saveNow = useCallback(
     async (avaliacoes: AssessmentMap, justificativas: JustificativaMap = {}, observacao = "") => {
-      if (!userId) return;
+      if (!userId) return false;
       qc.setQueryData(key, (old: StudentAssessment | undefined) => ({
         ...(old ?? EMPTY),
         alunoId,
@@ -262,8 +262,10 @@ export function useStudentAssessment(alunoId: string) {
       try {
         await persist(userId, alunoId, avaliacoes, justificativas, observacao, false);
         qc.invalidateQueries({ queryKey: ["all-student-assessments", userId] });
+        return true;
       } catch (e) {
         console.error("Falha ao salvar avaliação imediatamente", e);
+        return false;
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

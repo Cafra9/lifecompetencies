@@ -139,14 +139,15 @@ export function AvaliarDialog({
   const allAnswered = preenchidos + naAplica >= total;
 
   function scrollToKey(k: string) {
-    const OFFSET_TOP = 32;
-    const SETTLE_MS = 260;
+    const OFFSET_TOP = 48;
+    const SETTLE_MS = 380;
 
     const align = (behavior: ScrollBehavior) => {
       const el = itemRefs.current[k];
       const scroller = scrollerRef.current;
       if (!el || !scroller) return;
-      const elTop = el.getBoundingClientRect().top;
+      const anchor = (el.querySelector("[data-skill-scroll-anchor]") as HTMLElement | null) ?? el;
+      const elTop = anchor.getBoundingClientRect().top;
       const scTop = scroller.getBoundingClientRect().top;
       const targetTop = scroller.scrollTop + elTop - scTop - OFFSET_TOP;
       scroller.scrollTo({ top: Math.max(0, targetTop), behavior });
@@ -158,9 +159,10 @@ export function AvaliarDialog({
       const el = itemRefs.current[k];
       const scroller = scrollerRef.current;
       if (!el || !scroller) return;
-      const relativeTop = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
-      if (relativeTop < 20 || relativeTop > 56) align("auto");
-    }, SETTLE_MS + 360);
+      const anchor = (el.querySelector("[data-skill-scroll-anchor]") as HTMLElement | null) ?? el;
+      const relativeTop = anchor.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+      if (relativeTop < 36 || relativeTop > 84) align("auto");
+    }, SETTLE_MS + 420);
   }
 
   function advanceFrom(currentKey: string) {
@@ -191,7 +193,9 @@ export function AvaliarDialog({
     setLocal(nextLocal);
     // "Não se aplica" não exige justificativa — limpa qualquer texto residual.
     setLocalJust(nextJust);
-    void saveNow(nextLocal, nextJust, localObs);
+    void saveNow(nextLocal, nextJust, localObs).then((ok) => {
+      if (ok === false) toast.error("Não foi possível salvar esta resposta. Verifique as migrations do banco.");
+    });
     // Avança automaticamente para a próxima habilidade.
     advanceFrom(k);
   }
@@ -276,7 +280,7 @@ export function AvaliarDialog({
                         }}
                         className="rounded-md border bg-card data-[state=open]:shadow-sm"
                       >
-                        <div className="flex items-center gap-2 pl-3 pr-2">
+                        <div data-skill-scroll-anchor className="flex items-center gap-2 pl-3 pr-2">
                           <AccordionTrigger className="flex-1 py-1.5 hover:no-underline">
                             <div className="flex items-center gap-2 text-left min-w-0">
                               <span

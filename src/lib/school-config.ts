@@ -8,8 +8,8 @@ export type AppRole = "professor" | "coordenador" | "diretora" | "admin";
 export const SEGMENT_LABELS: Record<SchoolSegment, string> = {
   infantil: "Early Years (Kindergarten)",
   fundamental_1: "Elementary School",
-  fundamental_2: "Elementary School",
-  medio: "Ensino Médio",
+  fundamental_2: "Middle School",
+  medio: "High School",
 };
 
 export const ROLE_LABELS: Record<AppRole, string> = {

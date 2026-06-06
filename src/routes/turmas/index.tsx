@@ -35,6 +35,7 @@ function TurmasPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Turma> | null>(null);
   const [editTeachers, setEditTeachers] = useState<{ user_id: string; papel: string }[]>([]);
+  const [bulkStudentNames, setBulkStudentNames] = useState("");
   const [busy, setBusy] = useState(false);
 
   const { data: turmas } = useQuery({
@@ -81,12 +82,27 @@ function TurmasPage() {
   function startNew() {
     setEditing({ nome: "", letra: "", school_year_id: null, professor_regente_id: user?.id ?? null, arquivada: false });
     setEditTeachers([]);
+    setBulkStudentNames("");
     setOpen(true);
   }
   function startEdit(t: Turma) {
     setEditing(t);
     setEditTeachers((teachersByClass[t.id] ?? []).map((ct) => ({ user_id: ct.user_id, papel: ct.papel ?? "" })));
+    setBulkStudentNames("");
     setOpen(true);
+  }
+
+  function parseStudentNames(value: string) {
+    const seen = new Set<string>();
+    return value
+      .split(/\r?\n|;/)
+      .map((name) => name.trim().replace(/\s+/g, " "))
+      .filter((name) => {
+        const key = name.toLocaleLowerCase("pt-BR");
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
   }
 
   async function save(e: React.FormEvent) {
@@ -127,11 +143,43 @@ function TurmasPage() {
         if (ctErr) toast.error(`Co-professores: ${ctErr.message}`);
       }
     }
+    let addedStudents = 0;
+    const studentNames = parseStudentNames(bulkStudentNames);
+    if (classId && studentNames.length > 0) {
+      const { data: existing, error: existingErr } = await supabase
+        .from("students")
+        .select("nome")
+        .eq("class_id", classId);
+      if (existingErr) {
+        setBusy(false);
+        return toast.error(existingErr.message);
+      }
+      const existingNames = new Set(
+        ((existing ?? []) as Array<{ nome: string }>)
+          .map((student) => student.nome.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR")),
+      );
+      const newStudents = studentNames
+        .filter((name) => !existingNames.has(name.toLocaleLowerCase("pt-BR")))
+        .map((nome) => ({ nome, class_id: classId }));
+
+      if (newStudents.length > 0) {
+        const { error: studentsErr } = await supabase.from("students").insert(newStudents);
+        if (studentsErr) {
+          setBusy(false);
+          return toast.error(studentsErr.message);
+        }
+        addedStudents = newStudents.length;
+      }
+    }
     setBusy(false);
-    toast.success(editing.id ? "Turma atualizada" : "Turma criada");
-    setOpen(false); setEditing(null); setEditTeachers([]);
+    toast.success(editing.id ? "Turma atualizada" : "Turma criada", {
+      description: addedStudents > 0 ? `${addedStudents} aluno(s) adicionado(s).` : undefined,
+    });
+    setOpen(false); setEditing(null); setEditTeachers([]); setBulkStudentNames("");
     qc.invalidateQueries({ queryKey: ["turmas"] });
     qc.invalidateQueries({ queryKey: ["class-teachers"] });
+    qc.invalidateQueries({ queryKey: ["student-counts"] });
+    if (classId) qc.invalidateQueries({ queryKey: ["students", classId] });
   }
 
   async function toggleArchive(t: Turma) {
@@ -164,7 +212,7 @@ function TurmasPage() {
         <div>
           <p className="text-sm font-medium text-primary uppercase tracking-wide">Estrutura escolar</p>
           <h1 className="text-3xl font-bold mt-1">Turmas e alunos</h1>
-          <p className="text-muted-foreground">Early Years (K1–K5) e Elementary School (Y1–Y9). Vincule regente e co-professores a cada turma.</p>
+          <p className="text-muted-foreground">Early Years (K1-K5), Elementary School (Y1-Y5), Middle School (Y6-Y9) e High School (EM1-EM3). Vincule regente e co-professores a cada turma.</p>
         </div>
         <Button onClick={startNew}><Plus className="h-4 w-4 mr-2" /> Nova turma</Button>
       </div>
@@ -182,7 +230,7 @@ function TurmasPage() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditing(null); setEditTeachers([]); } }}>
+      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditing(null); setEditTeachers([]); setBulkStudentNames(""); } }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing?.id ? "Editar turma" : "Nova turma"}</DialogTitle></DialogHeader>
           {editing && (
@@ -205,7 +253,15 @@ function TurmasPage() {
                         <SelectItem key={y.id} value={y.id}>{y.nome}</SelectItem>
                       ))}
                       <div className="px-2 py-1 text-xs font-semibold text-muted-foreground mt-1">Elementary School</div>
-                      {(years ?? []).filter((y) => y.segmento === "fundamental_1" || y.segmento === "fundamental_2").map((y) => (
+                      {(years ?? []).filter((y) => y.segmento === "fundamental_1").map((y) => (
+                        <SelectItem key={y.id} value={y.id}>{y.nome}</SelectItem>
+                      ))}
+                      <div className="px-2 py-1 text-xs font-semibold text-muted-foreground mt-1">Middle School</div>
+                      {(years ?? []).filter((y) => y.segmento === "fundamental_2").map((y) => (
+                        <SelectItem key={y.id} value={y.id}>{y.nome}</SelectItem>
+                      ))}
+                      <div className="px-2 py-1 text-xs font-semibold text-muted-foreground mt-1">High School</div>
+                      {(years ?? []).filter((y) => y.segmento === "medio").map((y) => (
                         <SelectItem key={y.id} value={y.id}>{y.nome}</SelectItem>
                       ))}
                     </SelectContent>
@@ -280,6 +336,20 @@ function TurmasPage() {
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div>
+                <Label>Alunos</Label>
+                <textarea
+                  value={bulkStudentNames}
+                  onChange={(e) => setBulkStudentNames(e.target.value)}
+                  rows={7}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  placeholder={"Cole a lista de alunos aqui, um nome por linha.\nExemplo:\nAna Silva\nBruno Santos\nCarla Oliveira"}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Ao salvar, apenas nomes novos serão adicionados à turma.
+                </p>
               </div>
 
               <DialogFooter>

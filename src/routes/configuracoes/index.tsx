@@ -687,6 +687,7 @@ function ClassesTab() {
   const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<Partial<Turma> | null>(null);
   const [editAssoc, setEditAssoc] = useState<string[]>([]);
+  const [bulkStudentNames, setBulkStudentNames] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -713,8 +714,34 @@ function ClassesTab() {
   const yearsById = useMemo(() => Object.fromEntries(years.map((y) => [y.id, y])), [years]);
   const profileById = useMemo(() => Object.fromEntries(profiles.map((p) => [p.id, p])), [profiles]);
 
-  const openNew = () => { setEditing({ nome: "", letra: "", school_year_id: null, professor_regente_id: user?.id ?? null, arquivada: false }); setEditAssoc([]); };
-  const openEdit = (c: Turma) => { setEditing(c); setEditAssoc(classTeachers.filter((t) => t.class_id === c.id).map((t) => t.user_id)); };
+  const openNew = () => {
+    setEditing({ nome: "", letra: "", school_year_id: null, professor_regente_id: user?.id ?? null, arquivada: false });
+    setEditAssoc([]);
+    setBulkStudentNames("");
+  };
+  const openEdit = (c: Turma) => {
+    setEditing(c);
+    setEditAssoc(classTeachers.filter((t) => t.class_id === c.id).map((t) => t.user_id));
+    setBulkStudentNames("");
+  };
+  const closeEditor = () => {
+    setEditing(null);
+    setEditAssoc([]);
+    setBulkStudentNames("");
+  };
+
+  function parseStudentNames(value: string) {
+    const seen = new Set<string>();
+    return value
+      .split(/\r?\n|;/)
+      .map((name) => name.trim().replace(/\s+/g, " "))
+      .filter((name) => {
+        const key = name.toLocaleLowerCase("pt-BR");
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  }
 
   const save = async () => {
     if (!user || !editing) return;
@@ -752,8 +779,33 @@ function ClassesTab() {
         if (error) toast.error(`Professores associados: ${error.message}`);
       }
     }
-    toast.success(editing.id ? "Turma atualizada" : "Turma criada");
-    setEditing(null); setEditAssoc([]);
+    let addedStudents = 0;
+    const studentNames = parseStudentNames(bulkStudentNames);
+    if (classId && studentNames.length > 0) {
+      const { data: existing, error: existingErr } = await supabase
+        .from("students")
+        .select("nome")
+        .eq("class_id", classId);
+      if (existingErr) return toast.error(existingErr.message);
+
+      const existingNames = new Set(
+        ((existing ?? []) as Array<{ nome: string }>)
+          .map((student) => student.nome.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR")),
+      );
+      const newStudents = studentNames
+        .filter((name) => !existingNames.has(name.toLocaleLowerCase("pt-BR")))
+        .map((nome) => ({ nome, class_id: classId }));
+
+      if (newStudents.length > 0) {
+        const { error: studentsErr } = await supabase.from("students").insert(newStudents);
+        if (studentsErr) return toast.error(studentsErr.message);
+        addedStudents = newStudents.length;
+      }
+    }
+    toast.success(editing.id ? "Turma atualizada" : "Turma criada", {
+      description: addedStudents > 0 ? `${addedStudents} aluno(s) adicionado(s).` : undefined,
+    });
+    closeEditor();
     refresh();
   };
 
@@ -823,7 +875,7 @@ function ClassesTab() {
           </Table>
         )}
 
-        <Dialog open={!!editing} onOpenChange={(o) => !o && (setEditing(null), setEditAssoc([]))}>
+        <Dialog open={!!editing} onOpenChange={(o) => !o && closeEditor()}>
           <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing?.id ? "Editar turma" : "Nova turma"}</DialogTitle></DialogHeader>
             {editing && (
@@ -876,11 +928,24 @@ function ClassesTab() {
                     ))}
                   </div>
                 </div>
+                <div>
+                  <Label>Alunos</Label>
+                  <textarea
+                    value={bulkStudentNames}
+                    onChange={(e) => setBulkStudentNames(e.target.value)}
+                    rows={7}
+                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    placeholder={"Cole a lista de alunos aqui, um nome por linha.\nExemplo:\nAna Silva\nBruno Santos\nCarla Oliveira"}
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Ao salvar, apenas nomes novos serão adicionados à turma.
+                  </p>
+                </div>
                 <div className="flex items-center gap-2"><Switch checked={!!editing.arquivada} onCheckedChange={(v) => setEditing({ ...editing, arquivada: v })} /><Label>Arquivada</Label></div>
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setEditing(null); setEditAssoc([]); }}>Cancelar</Button>
+              <Button variant="outline" onClick={closeEditor}>Cancelar</Button>
               <Button onClick={save}>Salvar</Button>
             </DialogFooter>
           </DialogContent>

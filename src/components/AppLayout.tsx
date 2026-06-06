@@ -4,6 +4,7 @@ import frameworkIcon from "@/assets/framework.png";
 import aubrickLogo from "@/assets/aubrick-isp-logo.jpg";
 import type { ReactNode } from "react";
 import { useAuth, useCanConfigure } from "@/hooks/useAuth";
+import { TEST_AUTO_LOGIN } from "@/lib/test-auth";
 
 const baseNav = [
   { to: "/", label: "Dashboard", icon: LayoutGrid },
@@ -61,14 +62,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <div className="text-sm font-medium">{displayName}</div>
               <div className="text-xs text-muted-foreground">Professora</div>
             </div>
-            <button
-              onClick={handleSignOut}
-              className="text-muted-foreground hover:text-foreground transition"
-              aria-label="Sair"
-              title="Sair"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+            {!TEST_AUTO_LOGIN && (
+              <button
+                onClick={handleSignOut}
+                className="text-muted-foreground hover:text-foreground transition"
+                aria-label="Sair"
+                title="Sair"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       </header>
