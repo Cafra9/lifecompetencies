@@ -9,29 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TurmasIndexRouteImport } from './routes/turmas/index'
-import { Route as RelatoriosIndexRouteImport } from './routes/relatorios/index'
-import { Route as PlanosIndexRouteImport } from './routes/planos/index'
-import { Route as PerfilIndexRouteImport } from './routes/perfil/index'
-import { Route as FormacaoIndexRouteImport } from './routes/formacao/index'
-import { Route as ConfiguracoesIndexRouteImport } from './routes/configuracoes/index'
-import { Route as BibliotecaIndexRouteImport } from './routes/biblioteca/index'
-import { Route as AvaliacoesIndexRouteImport } from './routes/avaliacoes/index'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as TurmasIdRouteImport } from './routes/turmas/$id'
-import { Route as FormacaoSlugRouteImport } from './routes/formacao/$slug'
-import { Route as AvaliacoesRubricaRouteImport } from './routes/avaliacoes/rubrica'
-import { Route as AlunosIdRouteImport } from './routes/alunos/$id'
-import { Route as AdminTiposEvidenciaRouteImport } from './routes/admin/tipos-evidencia'
 import { Route as AdminBasesConhecimentoRouteImport } from './routes/admin/bases-conhecimento'
+import { Route as AdminTiposEvidenciaRouteImport } from './routes/admin/tipos-evidencia'
+import { Route as AlunosIdRouteImport } from './routes/alunos/$id'
+import { Route as AvaliacoesIndexRouteImport } from './routes/avaliacoes/index'
+import { Route as AvaliacoesRubricaRouteImport } from './routes/avaliacoes/rubrica'
+import { Route as BibliotecaIndexRouteImport } from './routes/biblioteca/index'
+import { Route as ConfiguracoesIndexRouteImport } from './routes/configuracoes/index'
+import { Route as FormacaoIndexRouteImport } from './routes/formacao/index'
+import { Route as FormacaoSlugRouteImport } from './routes/formacao/$slug'
+import { Route as PerfilIndexRouteImport } from './routes/perfil/index'
+import { Route as PlanosIndexRouteImport } from './routes/planos/index'
+import { Route as RelatoriosIndexRouteImport } from './routes/relatorios/index'
+import { Route as TurmasIndexRouteImport } from './routes/turmas/index'
+import { Route as TurmasIdRouteImport } from './routes/turmas/$id'
 import { Route as RelatoriosAlunoIdRouteImport } from './routes/relatorios/aluno/$id'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -39,49 +39,9 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TurmasIndexRoute = TurmasIndexRouteImport.update({
-  id: '/turmas/',
-  path: '/turmas/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RelatoriosIndexRoute = RelatoriosIndexRouteImport.update({
-  id: '/relatorios/',
-  path: '/relatorios/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlanosIndexRoute = PlanosIndexRouteImport.update({
-  id: '/planos/',
-  path: '/planos/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PerfilIndexRoute = PerfilIndexRouteImport.update({
-  id: '/perfil/',
-  path: '/perfil/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FormacaoIndexRoute = FormacaoIndexRouteImport.update({
-  id: '/formacao/',
-  path: '/formacao/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConfiguracoesIndexRoute = ConfiguracoesIndexRouteImport.update({
-  id: '/configuracoes/',
-  path: '/configuracoes/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BibliotecaIndexRoute = BibliotecaIndexRouteImport.update({
-  id: '/biblioteca/',
-  path: '/biblioteca/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AvaliacoesIndexRoute = AvaliacoesIndexRouteImport.update({
-  id: '/avaliacoes/',
-  path: '/avaliacoes/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -89,24 +49,9 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TurmasIdRoute = TurmasIdRouteImport.update({
-  id: '/turmas/$id',
-  path: '/turmas/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FormacaoSlugRoute = FormacaoSlugRouteImport.update({
-  id: '/formacao/$slug',
-  path: '/formacao/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AvaliacoesRubricaRoute = AvaliacoesRubricaRouteImport.update({
-  id: '/avaliacoes/rubrica',
-  path: '/avaliacoes/rubrica',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AlunosIdRoute = AlunosIdRouteImport.update({
-  id: '/alunos/$id',
-  path: '/alunos/$id',
+const AdminBasesConhecimentoRoute = AdminBasesConhecimentoRouteImport.update({
+  id: '/admin/bases-conhecimento',
+  path: '/admin/bases-conhecimento',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminTiposEvidenciaRoute = AdminTiposEvidenciaRouteImport.update({
@@ -114,9 +59,64 @@ const AdminTiposEvidenciaRoute = AdminTiposEvidenciaRouteImport.update({
   path: '/admin/tipos-evidencia',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminBasesConhecimentoRoute = AdminBasesConhecimentoRouteImport.update({
-  id: '/admin/bases-conhecimento',
-  path: '/admin/bases-conhecimento',
+const AlunosIdRoute = AlunosIdRouteImport.update({
+  id: '/alunos/$id',
+  path: '/alunos/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AvaliacoesIndexRoute = AvaliacoesIndexRouteImport.update({
+  id: '/avaliacoes/',
+  path: '/avaliacoes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AvaliacoesRubricaRoute = AvaliacoesRubricaRouteImport.update({
+  id: '/avaliacoes/rubrica',
+  path: '/avaliacoes/rubrica',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BibliotecaIndexRoute = BibliotecaIndexRouteImport.update({
+  id: '/biblioteca/',
+  path: '/biblioteca/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesIndexRoute = ConfiguracoesIndexRouteImport.update({
+  id: '/configuracoes/',
+  path: '/configuracoes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FormacaoIndexRoute = FormacaoIndexRouteImport.update({
+  id: '/formacao/',
+  path: '/formacao/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FormacaoSlugRoute = FormacaoSlugRouteImport.update({
+  id: '/formacao/$slug',
+  path: '/formacao/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilIndexRoute = PerfilIndexRouteImport.update({
+  id: '/perfil/',
+  path: '/perfil/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanosIndexRoute = PlanosIndexRouteImport.update({
+  id: '/planos/',
+  path: '/planos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatoriosIndexRoute = RelatoriosIndexRouteImport.update({
+  id: '/relatorios/',
+  path: '/relatorios/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TurmasIndexRoute = TurmasIndexRouteImport.update({
+  id: '/turmas/',
+  path: '/turmas/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TurmasIdRoute = TurmasIdRouteImport.update({
+  id: '/turmas/$id',
+  path: '/turmas/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosAlunoIdRoute = RelatoriosAlunoIdRouteImport.update({
@@ -279,11 +279,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -293,67 +293,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/turmas/': {
-      id: '/turmas/'
-      path: '/turmas'
-      fullPath: '/turmas/'
-      preLoaderRoute: typeof TurmasIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/relatorios/': {
-      id: '/relatorios/'
-      path: '/relatorios'
-      fullPath: '/relatorios/'
-      preLoaderRoute: typeof RelatoriosIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/planos/': {
-      id: '/planos/'
-      path: '/planos'
-      fullPath: '/planos/'
-      preLoaderRoute: typeof PlanosIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/perfil/': {
-      id: '/perfil/'
-      path: '/perfil'
-      fullPath: '/perfil/'
-      preLoaderRoute: typeof PerfilIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/formacao/': {
-      id: '/formacao/'
-      path: '/formacao'
-      fullPath: '/formacao/'
-      preLoaderRoute: typeof FormacaoIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/configuracoes/': {
-      id: '/configuracoes/'
-      path: '/configuracoes'
-      fullPath: '/configuracoes/'
-      preLoaderRoute: typeof ConfiguracoesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/biblioteca/': {
-      id: '/biblioteca/'
-      path: '/biblioteca'
-      fullPath: '/biblioteca/'
-      preLoaderRoute: typeof BibliotecaIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/avaliacoes/': {
-      id: '/avaliacoes/'
-      path: '/avaliacoes'
-      fullPath: '/avaliacoes/'
-      preLoaderRoute: typeof AvaliacoesIndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -363,32 +307,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/turmas/$id': {
-      id: '/turmas/$id'
-      path: '/turmas/$id'
-      fullPath: '/turmas/$id'
-      preLoaderRoute: typeof TurmasIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/formacao/$slug': {
-      id: '/formacao/$slug'
-      path: '/formacao/$slug'
-      fullPath: '/formacao/$slug'
-      preLoaderRoute: typeof FormacaoSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/avaliacoes/rubrica': {
-      id: '/avaliacoes/rubrica'
-      path: '/avaliacoes/rubrica'
-      fullPath: '/avaliacoes/rubrica'
-      preLoaderRoute: typeof AvaliacoesRubricaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/alunos/$id': {
-      id: '/alunos/$id'
-      path: '/alunos/$id'
-      fullPath: '/alunos/$id'
-      preLoaderRoute: typeof AlunosIdRouteImport
+    '/admin/bases-conhecimento': {
+      id: '/admin/bases-conhecimento'
+      path: '/admin/bases-conhecimento'
+      fullPath: '/admin/bases-conhecimento'
+      preLoaderRoute: typeof AdminBasesConhecimentoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/tipos-evidencia': {
@@ -398,11 +321,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTiposEvidenciaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/bases-conhecimento': {
-      id: '/admin/bases-conhecimento'
-      path: '/admin/bases-conhecimento'
-      fullPath: '/admin/bases-conhecimento'
-      preLoaderRoute: typeof AdminBasesConhecimentoRouteImport
+    '/alunos/$id': {
+      id: '/alunos/$id'
+      path: '/alunos/$id'
+      fullPath: '/alunos/$id'
+      preLoaderRoute: typeof AlunosIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/avaliacoes/': {
+      id: '/avaliacoes/'
+      path: '/avaliacoes'
+      fullPath: '/avaliacoes/'
+      preLoaderRoute: typeof AvaliacoesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/avaliacoes/rubrica': {
+      id: '/avaliacoes/rubrica'
+      path: '/avaliacoes/rubrica'
+      fullPath: '/avaliacoes/rubrica'
+      preLoaderRoute: typeof AvaliacoesRubricaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/biblioteca/': {
+      id: '/biblioteca/'
+      path: '/biblioteca'
+      fullPath: '/biblioteca/'
+      preLoaderRoute: typeof BibliotecaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes/': {
+      id: '/configuracoes/'
+      path: '/configuracoes'
+      fullPath: '/configuracoes/'
+      preLoaderRoute: typeof ConfiguracoesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/formacao/': {
+      id: '/formacao/'
+      path: '/formacao'
+      fullPath: '/formacao/'
+      preLoaderRoute: typeof FormacaoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/formacao/$slug': {
+      id: '/formacao/$slug'
+      path: '/formacao/$slug'
+      fullPath: '/formacao/$slug'
+      preLoaderRoute: typeof FormacaoSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil/': {
+      id: '/perfil/'
+      path: '/perfil'
+      fullPath: '/perfil/'
+      preLoaderRoute: typeof PerfilIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planos/': {
+      id: '/planos/'
+      path: '/planos'
+      fullPath: '/planos/'
+      preLoaderRoute: typeof PlanosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorios/': {
+      id: '/relatorios/'
+      path: '/relatorios'
+      fullPath: '/relatorios/'
+      preLoaderRoute: typeof RelatoriosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/turmas/': {
+      id: '/turmas/'
+      path: '/turmas'
+      fullPath: '/turmas/'
+      preLoaderRoute: typeof TurmasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/turmas/$id': {
+      id: '/turmas/$id'
+      path: '/turmas/$id'
+      fullPath: '/turmas/$id'
+      preLoaderRoute: typeof TurmasIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/relatorios/aluno/$id': {
