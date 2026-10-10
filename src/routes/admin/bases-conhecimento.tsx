@@ -23,7 +23,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/admin/bases-conhecimento")({
   component: Page,
   errorComponent: ({ error }) => (
-    <AppLayout><div role="alert" className="p-6">Erro: {error.message}</div></AppLayout>
+    <AppLayout><div role="alert" className="p-6">Erro: {(error as Error).message}</div></AppLayout>
   ),
   notFoundComponent: () => <AppLayout><div className="p-6">Página não encontrada</div></AppLayout>,
 });

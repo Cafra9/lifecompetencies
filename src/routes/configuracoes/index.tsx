@@ -63,7 +63,7 @@ function ConfiguracoesPage() {
       <AppLayout>
         <Card>
           <CardHeader><CardTitle>Acesso restrito</CardTitle><CardDescription>Faça login.</CardDescription></CardHeader>
-          <CardContent><Button asChild><Link to="/login">Entrar</Link></Button></CardContent>
+          <CardContent><Button asChild><Link to="/login" search={{ redirect: "/configuracoes" }}>Entrar</Link></Button></CardContent>
         </Card>
       </AppLayout>
     );

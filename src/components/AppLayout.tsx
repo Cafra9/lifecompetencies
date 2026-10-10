@@ -27,7 +27,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     (user?.email ? user.email.split("@")[0] : "Lisandra");
   const handleSignOut = async () => {
     await signOut();
-    navigate({ to: "/login" });
+    navigate({ to: "/login", search: { redirect: "/avaliacoes" } });
   };
   return (
     <div className="min-h-screen bg-[oklch(0.98_0.005_250)]">
