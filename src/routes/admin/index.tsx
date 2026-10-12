@@ -14,6 +14,7 @@ export const Route = createFileRoute("/admin/")({
         </div>
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           <AdminCard icon={Users} title="Usuários e papéis" desc="Convidar professores, coordenadores e admins" />
+          <AdminCard icon={GraduationCap} title="Avaliações dos professores" desc="Todas as avaliações registradas, de todos os professores" to="/admin/avaliacoes" />
           <AdminCard icon={GraduationCap} title="Trilhas de formação" desc="Publicar módulos, vídeos e quizzes" />
           <AdminCard icon={BookOpen} title="Biblioteca" desc="Curar recursos, rubricas e templates" />
           <AdminCard
