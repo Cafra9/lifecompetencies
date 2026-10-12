@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAvaliacoesRouteImport } from './routes/admin/avaliacoes'
 import { Route as AdminBasesConhecimentoRouteImport } from './routes/admin/bases-conhecimento'
 import { Route as AdminTiposEvidenciaRouteImport } from './routes/admin/tipos-evidencia'
 import { Route as AlunosIdRouteImport } from './routes/alunos/$id'
@@ -47,6 +48,11 @@ const LoginRoute = LoginRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAvaliacoesRoute = AdminAvaliacoesRouteImport.update({
+  id: '/admin/avaliacoes',
+  path: '/admin/avaliacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminBasesConhecimentoRoute = AdminBasesConhecimentoRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/login': typeof LoginRoute
+  '/admin/avaliacoes': typeof AdminAvaliacoesRoute
   '/admin/bases-conhecimento': typeof AdminBasesConhecimentoRoute
   '/admin/tipos-evidencia': typeof AdminTiposEvidenciaRoute
   '/alunos/$id': typeof AlunosIdRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/login': typeof LoginRoute
+  '/admin/avaliacoes': typeof AdminAvaliacoesRoute
   '/admin/bases-conhecimento': typeof AdminBasesConhecimentoRoute
   '/admin/tipos-evidencia': typeof AdminTiposEvidenciaRoute
   '/alunos/$id': typeof AlunosIdRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/login': typeof LoginRoute
+  '/admin/avaliacoes': typeof AdminAvaliacoesRoute
   '/admin/bases-conhecimento': typeof AdminBasesConhecimentoRoute
   '/admin/tipos-evidencia': typeof AdminTiposEvidenciaRoute
   '/alunos/$id': typeof AlunosIdRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/login'
+    | '/admin/avaliacoes'
     | '/admin/bases-conhecimento'
     | '/admin/tipos-evidencia'
     | '/alunos/$id'
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/login'
+    | '/admin/avaliacoes'
     | '/admin/bases-conhecimento'
     | '/admin/tipos-evidencia'
     | '/alunos/$id'
@@ -237,6 +248,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/login'
+    | '/admin/avaliacoes'
     | '/admin/bases-conhecimento'
     | '/admin/tipos-evidencia'
     | '/alunos/$id'
@@ -259,6 +271,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   LoginRoute: typeof LoginRoute
+  AdminAvaliacoesRoute: typeof AdminAvaliacoesRoute
   AdminBasesConhecimentoRoute: typeof AdminBasesConhecimentoRoute
   AdminTiposEvidenciaRoute: typeof AdminTiposEvidenciaRoute
   AlunosIdRoute: typeof AlunosIdRoute
@@ -305,6 +318,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/avaliacoes': {
+      id: '/admin/avaliacoes'
+      path: '/admin/avaliacoes'
+      fullPath: '/admin/avaliacoes'
+      preLoaderRoute: typeof AdminAvaliacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/bases-conhecimento': {
@@ -419,6 +439,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   LoginRoute: LoginRoute,
+  AdminAvaliacoesRoute: AdminAvaliacoesRoute,
   AdminBasesConhecimentoRoute: AdminBasesConhecimentoRoute,
   AdminTiposEvidenciaRoute: AdminTiposEvidenciaRoute,
   AlunosIdRoute: AlunosIdRoute,
