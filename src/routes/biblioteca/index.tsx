@@ -8,6 +8,7 @@ import { FRAMEWORK_SKILLS, TIPOS_RECURSO, FILTROS_BIBLIOTECA } from "@/lib/iSP-c
 import { competencyColor } from "@/lib/competencies";
 import { BookOpen, FileText, LayoutGrid, Filter, ChevronRight } from "lucide-react";
 import { BibliotecaDetalheDialog, type BibliotecaRecurso } from "@/components/BibliotecaDetalheDialog";
+import { BasesConhecimentoBiblioteca } from "@/components/BasesConhecimentoBiblioteca";
 
 export const Route = createFileRoute("/biblioteca/")({
   component: () => (
@@ -63,6 +64,9 @@ function Biblioteca() {
           onClick={() => abrir("templates")}
         />
       </div>
+
+      <BasesConhecimentoBiblioteca />
+
 
       <Card>
         <CardHeader><CardTitle>Framework das competências</CardTitle></CardHeader>
