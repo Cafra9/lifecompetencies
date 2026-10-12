@@ -1,36 +1,34 @@
+# Biblioteca: conteúdo clicável com modais de detalhe
+
 ## Problema
+A página `/biblioteca` é estática: os 3 cards de recurso (Framework ISP, Rubricas por estágio, Templates KSU) não têm ação de clique.
 
-Ao anexar uma evidência cujo arquivo tem espaços ou acentos no nome (ex.: `K4B_2026_1 CECÍLIA AFONSO FALABELLA corrigido.txt`), o Supabase Storage devolve `Invalid key: …`. O bucket `student-evidences` valida o `path` e não aceita espaços nem vários caracteres Unicode.
+## Solução
+Tornar os 3 cards clicáveis; cada um abre um modal (Dialog) com o conteúdo completo já existente no app — sem novas páginas e sem alterar dados.
 
-A causa está em `src/components/EvidenceUploadDialog.tsx`, linha 68:
+## Implementação
+Arquivo principal: `src/routes/biblioteca/index.tsx` (+ um novo componente de modal, ex.: `src/components/BibliotecaDetalheDialog.tsx`).
 
-```ts
-const path = `${user.id}/${studentId}/${Date.now()}_${file.name}`;
-```
+1. **Card "Framework ISP"** → modal com as 5 competências (`FRAMEWORK_SKILLS` de `src/lib/iSP-content.ts`): cada competência com suas subcompetências e a lista completa de habilidades, colorido com `competencyColor`.
 
-O `file.name` é usado cru.
+2. **Card "Rubricas por estágio"** → modal com as 4 etapas (Stage 1–4):
+   - Stage 1 (4–7 anos): rubrica completa de `RUBRICA_INFANTIL` (`src/lib/rubrica-infantil.ts`) — competências, habilidades, descritores (Iniciando / Desenvolvendo / Dominando) e exemplos de cada nível.
+   - Stages 2–4 (7–11, 11–14, 14–18): exibidos como indisponíveis ("em breve"), usando `SEGMENTOS` — sem inventar conteúdo.
 
-## Correção
+3. **Card "Templates KSU"** → modal com:
+   - Modelo de plano (campos do `MODELO_PLANO`).
+   - Exemplo de plano completo (`PLANO_EXEMPLO`: objetivos, momentos da aula, competências trabalhadas).
+   - Design "Learning First" (`LEARNING_FIRST_DESIGN`: os 4 passos).
 
-Sanitizar somente o nome do arquivo antes de compor o `path`, preservando a extensão:
+Detalhes de UX:
+- Cards ganham cursor de clique, hover sutil e ícone indicativo (ex.: seta/olho).
+- Modais roláveis, largura confortável, título e descrição do recurso no cabeçalho.
+- Conteúdo reutiliza os componentes atuais (Card, Badge, Tabs) — nenhuma dependência nova.
 
-1. Separar `nome` e `extensão`.
-2. Normalizar para remover acentos (`normalize("NFD").replace(/[\u0300-\u036f]/g, "")`).
-3. Substituir qualquer caractere fora de `[a-zA-Z0-9._-]` por `_`.
-4. Colapsar `_` repetidos e cortar para no máximo ~80 caracteres.
-5. Fallback `arquivo` se ficar vazio.
-6. Recompor: `${user.id}/${studentId}/${Date.now()}_${nomeLimpo}.${ext}`.
-
-O `Date.now()` continua garantindo unicidade; o nome original do arquivo já é guardado no campo `titulo`/metadados da evidência, então não há perda de informação para o professor.
-
-## Escopo
-
-- Editar apenas `src/components/EvidenceUploadDialog.tsx` (adicionar helper local + usar no `path`).
-- Sem mudanças no schema, no bucket ou nas funções de servidor.
-- Evidências já enviadas anteriormente continuam funcionando — a mudança afeta só novos uploads.
+## Fora do escopo
+- Nada de backend, banco de dados ou edição de conteúdo pelo admin.
+- Rubricas dos Stages 2–4 não são criadas (não existem no material atual).
 
 ## Verificação
-
-- Reanexar um arquivo com espaços e acentos no nome — upload deve concluir sem `Invalid key`.
-- A evidência deve aparecer normalmente na lista do aluno e ser baixável.
-- Arquivos com nomes já “limpos” devem continuar funcionando igual.
+- Build sem erros.
+- Teste com Playwright: abrir `/biblioteca`, clicar em cada um dos 3 cards e confirmar que o modal correspondente abre com o conteúdo correto.
