@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { FRAMEWORK_SKILLS, TIPOS_RECURSO, FILTROS_BIBLIOTECA } from "@/lib/iSP-content";
 import { competencyColor } from "@/lib/competencies";
-import { BookOpen, FileText, LayoutGrid, Filter } from "lucide-react";
+import { BookOpen, FileText, LayoutGrid, Filter, ChevronRight } from "lucide-react";
+import { BibliotecaDetalheDialog, type BibliotecaRecurso } from "@/components/BibliotecaDetalheDialog";
 
 export const Route = createFileRoute("/biblioteca/")({
   component: () => (
@@ -25,6 +27,14 @@ const labels: Record<string, string> = {
 };
 
 function Biblioteca() {
+  const [recurso, setRecurso] = useState<BibliotecaRecurso | null>(null);
+  const [open, setOpen] = useState(false);
+
+  const abrir = (r: BibliotecaRecurso) => {
+    setRecurso(r);
+    setOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -34,9 +44,24 @@ function Biblioteca() {
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
-        <RecursoCard icon={LayoutGrid} title="Framework ISP" desc="Cinco competências e habilidades detalhadas" />
-        <RecursoCard icon={FileText} title="Rubricas por estágio" desc="Stage 1 (4–7) · Stage 2 (8–11) · Stage 3 (12–14) · Stage 4 (15–18)" />
-        <RecursoCard icon={BookOpen} title="Templates KSU" desc="Conhecimento · Habilidade · Compreensão alinhados ao Big 5" />
+        <RecursoCard
+          icon={LayoutGrid}
+          title="Framework ISP"
+          desc="Cinco competências e habilidades detalhadas"
+          onClick={() => abrir("framework")}
+        />
+        <RecursoCard
+          icon={FileText}
+          title="Rubricas por estágio"
+          desc="Stage 1 (4–7) · Stage 2 (8–11) · Stage 3 (12–14) · Stage 4 (15–18)"
+          onClick={() => abrir("rubricas")}
+        />
+        <RecursoCard
+          icon={BookOpen}
+          title="Templates KSU"
+          desc="Conhecimento · Habilidade · Compreensão alinhados ao Big 5"
+          onClick={() => abrir("templates")}
+        />
       </div>
 
       <Card>
@@ -100,19 +125,43 @@ function Biblioteca() {
           </CardContent>
         </Card>
       </div>
+
+      <BibliotecaDetalheDialog recurso={recurso} open={open} onOpenChange={setOpen} />
     </div>
   );
 }
 
-function RecursoCard({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) {
+function RecursoCard({
+  icon: Icon,
+  title,
+  desc,
+  onClick,
+}: {
+  icon: any;
+  title: string;
+  desc: string;
+  onClick: () => void;
+}) {
   return (
-    <Card>
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className="cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <CardContent className="pt-6 flex items-start gap-3">
-        <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><Icon className="h-5 w-5" /></div>
-        <div>
+        <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0"><Icon className="h-5 w-5" /></div>
+        <div className="flex-1">
           <div className="font-medium">{title}</div>
           <div className="text-xs text-muted-foreground">{desc}</div>
         </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
       </CardContent>
     </Card>
   );
