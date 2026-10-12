@@ -1,0 +1,2 @@
+CREATE POLICY "SA: admin read all" ON public.student_assessments FOR SELECT TO authenticated USING (public.has_any_role(auth.uid(), ARRAY['admin'::app_role,'diretora'::app_role]));
+CREATE POLICY "SAM: admin read all" ON public.student_assessment_meta FOR SELECT TO authenticated USING (public.has_any_role(auth.uid(), ARRAY['admin'::app_role,'diretora'::app_role]));
